@@ -4,7 +4,7 @@ plugins {
 	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
 }
 
-group = 'com.jeongtongju'
+group = 'com.jeontongju'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -29,7 +29,7 @@ dependencies {
 	implementation group: 'io.micrometer', name: 'micrometer-registry-prometheus'
 	implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-config'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation 'org.springframework.cloud:spring-cloud-starter-bus-amqp'
+	implementation 'org.springframework.cloud:spring-cloud-starter-bus-kafka'
 	//implementation group: 'io.github.lotteon2', name: 'bitbox', version: '1.0.0'
 
 	compileOnly 'org.projectlombok:lombok'
