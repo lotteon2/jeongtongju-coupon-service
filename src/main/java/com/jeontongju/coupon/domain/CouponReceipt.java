@@ -17,9 +17,15 @@ import lombok.NoArgsConstructor;
 @Getter
 public class CouponReceipt extends BaseEntity {
 
-    @EmbeddedId
-    private CouponReceiptId id;
+  @EmbeddedId private CouponReceiptId id;
 
-    @Builder.Default
-    private Boolean isUse = false;
+  @Builder.Default private Boolean isUse = false;
+
+  public void deductCoupon() {
+    this.isUse = true;
+  }
+
+  public void rollbackCoupon() {
+    this.isUse = false;
+  }
 }
