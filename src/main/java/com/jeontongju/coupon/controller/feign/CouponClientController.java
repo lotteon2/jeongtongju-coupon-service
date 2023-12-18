@@ -6,6 +6,7 @@ import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,7 +16,7 @@ public class CouponClientController {
 
   private final CouponService couponService;
 
-  @GetMapping("/coupons")
+  @PostMapping("/coupons")
   FeignFormat<Void> checkCouponInfo(@RequestBody UserCouponUpdateDto userCouponUpdateDto) {
 
     couponService.checkCouponInfo(userCouponUpdateDto);
