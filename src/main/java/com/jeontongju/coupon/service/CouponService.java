@@ -14,6 +14,7 @@ import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.KafkaException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -33,6 +35,8 @@ public class CouponService {
 
   @Transactional
   public void deductCoupon(OrderInfoDto orderInfoDto) {
+
+    log.info("CouponService's deductCoupon executes..");
 
     UserCouponUpdateDto userCouponUpdateDto = orderInfoDto.getUserCouponUpdateDto();
 
@@ -50,10 +54,11 @@ public class CouponService {
     CouponReceipt foundCouponReceipt =
         couponReceiptRepository
             .findByCouponReceiptId(userCouponUpdateDto.getConsumerId(), foundCoupon)
-            .orElseThrow();
+            .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
 
     foundCouponReceipt.deductCoupon();
 
+    log.info("CouponService's deductCoupon Successful executed!");
     couponProducer.sendUpdateStock(KafkaTopicNameInfo.REDUCE_STOCK, orderInfoDto);
   }
 
