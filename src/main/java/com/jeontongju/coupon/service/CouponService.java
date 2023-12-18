@@ -34,7 +34,7 @@ public class CouponService {
 
     Long couponAmount = userCouponUpdateDto.getCouponAmount();
     Long totalAmount = userCouponUpdateDto.getTotalAmount();
-    if (couponAmount >= totalAmount * 0.1)
+    if (couponAmount > totalAmount * 0.1)
       throw new CouponDiscountAmountOver10PerException(
           CustomErrMessage.COUPON_DISCOUNT_AMOUNT_OVER_10_PER);
 
@@ -50,15 +50,10 @@ public class CouponService {
 
     foundCouponReceipt.deductCoupon();
 
-    try {
-      couponProducer.sendUpdateStock(KafkaTopicNameInfo.REDUCE_STOCK, orderInfoDto);
-    } catch (KafkaException e) {
-      rollbackOrderInfo(foundCouponReceipt, orderInfoDto);
-      throw new KafkaDuringOrderException(CustomErrMessage.ERROR_KAFKA);
-    }
+    couponProducer.sendUpdateStock(KafkaTopicNameInfo.REDUCE_STOCK, orderInfoDto);
   }
 
-  private void rollbackOrderInfo(CouponReceipt couponReceipt, OrderInfoDto orderInfoDto) {
+  public void rollbackOrderInfo(CouponReceipt couponReceipt, OrderInfoDto orderInfoDto) {
 
     couponReceipt.rollbackCoupon();
 
