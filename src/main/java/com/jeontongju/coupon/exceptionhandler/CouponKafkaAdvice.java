@@ -16,10 +16,6 @@ public class CouponKafkaAdvice {
   public FeignFormat<Void> handleCouponPolicyException() {
 
     HttpStatus status = HttpStatus.BAD_REQUEST;
-    return FeignFormat.<Void>builder()
-        .code(status.value())
-        .message(status.name())
-        .detail(CustomErrMessage.COUPON_DISCOUNT_AMOUNT_OVER_10_PER)
-        .build();
+    return FeignFormat.<Void>builder().code(status.value()).failure("EXPIRED").build();
   }
 }
