@@ -91,6 +91,7 @@ public class CouponService {
         getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
     log.info("CouponService's after getCouponReceipt");
 
+    log.info("foundCouponReceipt: " + foundCouponReceipt.getId().getCoupon().getCouponCode());
     if (foundCouponReceipt.getIsUse()) {
       log.info("이미 사용한 쿠폰");
       throw new AlreadyUseCouponException(CustomErrMessage.ALREADY_USE_COUPON);
