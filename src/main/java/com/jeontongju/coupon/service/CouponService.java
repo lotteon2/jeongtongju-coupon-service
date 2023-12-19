@@ -104,17 +104,18 @@ public class CouponService {
     }
     
     // 쿠폰 코드와 할인 금액 일치 여부 확인
-    if (!Objects.equals(userCouponUpdateDto.getCouponAmount(), foundCoupon.getDiscountAmount())) {
-      log.info("쿠폰 코드와 할인 금액 불일치");
-      throw new IncorrectCouponDiscountAmountException(
-          CustomErrMessage.INCORRECT_COUPON_DISCOUNT_AMOUNT);
-    }
+//    if (!Objects.equals(userCouponUpdateDto.getCouponAmount(), foundCoupon.getDiscountAmount())) {
+//      log.info("쿠폰 코드와 할인 금액 불일치");
+//      throw new IncorrectCouponDiscountAmountException(
+//          CustomErrMessage.INCORRECT_COUPON_DISCOUNT_AMOUNT);
+//    }
 
     // 쿠폰 사용을 위한 최소 주문 금액 확인
     if (userCouponUpdateDto.getTotalAmount() < foundCoupon.getMinOrderPrice()) {
       log.info("최소 주문 금액 미달");
       throw new InsufficientMinOrderPriceException(CustomErrMessage.INSUFFICIENT_MIN_ORDER_PRICE);
     }
+    log.info("checkCouponInfo executed.");
   }
 
   /**
