@@ -21,14 +21,15 @@ public class CouponConsumer {
 
   @KafkaListener(topics = KafkaTopicNameInfo.USE_COUPON)
   public void deductCoupon(OrderInfoDto orderInfoDto) {
+    log.info("CouponConsumer's deductCoupon executes..");
+    couponService.deductCoupon(orderInfoDto);
 
-    try {
-      log.info("CouponConsumer's deductCoupon executes..");
-      couponService.deductCoupon(orderInfoDto);
-    } catch (Exception e) {
-      log.error("deduct coupon exception={}", e.getMessage());
-      couponProducer.sendRollbackPoint("add-point", orderInfoDto);
-    }
+//    try {
+//
+//    } catch (Exception e) {
+//      log.error("deduct coupon exception={}", e.getMessage());
+//      couponProducer.sendRollbackPoint("add-point", orderInfoDto);
+//    }
   }
 
   @KafkaListener(topics = KafkaTopicNameInfo.ROLLBACK_COUPON)
