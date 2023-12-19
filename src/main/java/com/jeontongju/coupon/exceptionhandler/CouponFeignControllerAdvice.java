@@ -32,6 +32,16 @@ public class CouponFeignControllerAdvice {
         .build();
   }
 
+  @ExceptionHandler(AlreadyUseCouponException.class)
+  public FeignFormat<Void> handleAlreadyUseCoupon() {
+
+    // TODO
+    return FeignFormat.<Void>builder()
+        .code(HttpStatus.OK.value())
+        .failure(FailureTypeEnum.NOT_FOUND_COUPON)
+        .build();
+  }
+
   @ExceptionHandler(CouponExpiredException.class)
   public FeignFormat<Void> handleExpiredCoupon() {
 
@@ -55,10 +65,6 @@ public class CouponFeignControllerAdvice {
 
     HttpStatus status = HttpStatus.BAD_REQUEST;
     return ResponseEntity.status(status)
-        .body(
-            ResponseFormat.<Void>builder()
-                .code(status.value())
-                .message(status.name())
-                .build());
+        .body(ResponseFormat.<Void>builder().code(status.value()).message(status.name()).build());
   }
 }
