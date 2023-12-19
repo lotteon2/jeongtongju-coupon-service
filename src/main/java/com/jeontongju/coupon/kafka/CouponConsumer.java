@@ -19,11 +19,22 @@ public class CouponConsumer {
   private final CouponService couponService;
 
   @KafkaListener(topics = KafkaTopicNameInfo.USE_COUPON)
-  public void deductStock(OrderInfoDto orderInfoDto) {
+  public void deductCoupon(OrderInfoDto orderInfoDto) {
 
     try {
       log.info("CouponConsumer's deductCoupon executes..");
       couponService.deductCoupon(orderInfoDto);
+    } catch (KafkaException e) {
+      throw new KafkaDuringOrderException(CustomErrMessage.ERROR_KAFKA);
+    }
+  }
+
+  @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_ORDER_COUPON)
+  public void rollbackCouponUsage(OrderInfoDto orderInfoDto) {
+
+    try {
+      log.info("CouponConsumer's rollbackCouponUsage executes..");
+      couponService.rollbackCouponUsage(orderInfoDto);
     } catch (KafkaException e) {
       throw new KafkaDuringOrderException(CustomErrMessage.ERROR_KAFKA);
     }
