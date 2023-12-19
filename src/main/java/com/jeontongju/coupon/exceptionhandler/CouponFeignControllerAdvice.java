@@ -3,6 +3,7 @@ package com.jeontongju.coupon.exceptionhandler;
 import com.jeontongju.coupon.exception.*;
 import io.github.bitbox.bitbox.dto.FeignFormat;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
+import io.github.bitbox.bitbox.enums.FailureTypeEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ public class CouponFeignControllerAdvice {
 
     return FeignFormat.<Void>builder()
         .code(HttpStatus.OK.value())
-        .failure("NOT_FOUND_COUPON")
+        .failure(FailureTypeEnum.NOT_FOUND_COUPON)
         .build();
   }
 
@@ -27,7 +28,7 @@ public class CouponFeignControllerAdvice {
 
     return FeignFormat.<Void>builder()
         .code(HttpStatus.OK.value())
-        .failure("INSUFFICIENT_MIN_ORDER_PRICE")
+        .failure(FailureTypeEnum.INSUFFICIENT_MIN_ORDER_PRICE)
         .build();
   }
 
@@ -36,7 +37,7 @@ public class CouponFeignControllerAdvice {
 
     return FeignFormat.<Void>builder()
         .code(HttpStatus.OK.value())
-        .failure("EXPIRED_COUPON")
+        .failure(FailureTypeEnum.EXPIRED_COUPON)
         .build();
   }
 
@@ -45,7 +46,7 @@ public class CouponFeignControllerAdvice {
 
     return FeignFormat.<Void>builder()
         .code(HttpStatus.OK.value())
-        .failure("INCORRECT_COUPON_DISCOUNT_AMOUNT")
+        .failure(FailureTypeEnum.INCORRECT_COUPON_DISCOUNT_AMOUNT)
         .build();
   }
 
@@ -58,7 +59,6 @@ public class CouponFeignControllerAdvice {
             ResponseFormat.<Void>builder()
                 .code(status.value())
                 .message(status.name())
-                .failure("KAFKA_ERROR")
                 .build());
   }
 }
