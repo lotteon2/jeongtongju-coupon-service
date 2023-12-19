@@ -86,8 +86,10 @@ public class CouponService {
 
     Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
 
+    log.info("CouponService's before getCouponReceipt");
     CouponReceipt foundCouponReceipt =
         getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
+    log.info("CouponService's after getCouponReceipt");
 
     if (foundCouponReceipt.getIsUse()) {
       log.info("이미 사용한 쿠폰");
