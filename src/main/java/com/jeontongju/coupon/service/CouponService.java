@@ -111,6 +111,7 @@ public class CouponService {
 //    }
 
     // 쿠폰 사용을 위한 최소 주문 금액 확인
+    log.info("min order price={}", foundCoupon.getMinOrderPrice());
     if (userCouponUpdateDto.getTotalAmount() < foundCoupon.getMinOrderPrice()) {
       log.info("최소 주문 금액 미달");
       throw new InsufficientMinOrderPriceException(CustomErrMessage.INSUFFICIENT_MIN_ORDER_PRICE);
