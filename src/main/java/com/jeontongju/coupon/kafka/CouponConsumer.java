@@ -26,6 +26,7 @@ public class CouponConsumer {
       log.info("CouponConsumer's deductCoupon executes..");
       couponService.deductCoupon(orderInfoDto);
     } catch (Exception e) {
+      log.error("deduct coupon exception={}", e.getMessage());
       couponProducer.sendRollbackPoint("add-point", orderInfoDto);
     }
   }
@@ -38,7 +39,7 @@ public class CouponConsumer {
       couponService.rollbackCouponUsage(orderInfoDto);
       couponProducer.sendRollbackPoint("add-point", orderInfoDto);
     } catch (Exception e) {
-
+      log.error("rollback point exception={}", e.getMessage());
     }
   }
 }
