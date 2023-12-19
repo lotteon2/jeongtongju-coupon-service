@@ -43,9 +43,7 @@ public class CouponService {
     if (userCouponUpdateDto.getCouponCode() != null) {
       Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
 
-      log.info("CouponService's before checkCouponInfo");
       checkCouponInfo(userCouponUpdateDto);
-      log.info("CouponService's after checkCouponInfo");
 
       CouponReceipt foundCouponReceipt =
           getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
@@ -84,12 +82,11 @@ public class CouponService {
    */
   public void checkCouponInfo(UserCouponUpdateDto userCouponUpdateDto) {
 
+    log.info("checkCouponInfo start..");
     Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
 
-    log.info("CouponService's before getCouponReceipt");
     CouponReceipt foundCouponReceipt =
         getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
-    log.info("CouponService's after getCouponReceipt");
 
     log.info("foundCouponReceipt: " + foundCouponReceipt.getId().getCoupon().getCouponCode());
     if (foundCouponReceipt.getIsUse()) {
@@ -98,20 +95,19 @@ public class CouponService {
     }
 
     // 쿠폰 만료 여부 확인
-//    if (!isValidCoupon(foundCoupon.getExpiredAt())) {
-//      log.info("만료된 쿠폰");
-//      throw new CouponExpiredException(CustomErrMessage.EXPIRED_COUPON);
-//    }
-    
+    if (!isValidCoupon(foundCoupon.getExpiredAt())) {
+      log.info("만료된 쿠폰");
+      throw new CouponExpiredException(CustomErrMessage.EXPIRED_COUPON);
+    }
+
     // 쿠폰 코드와 할인 금액 일치 여부 확인
-//    if (!Objects.equals(userCouponUpdateDto.getCouponAmount(), foundCoupon.getDiscountAmount())) {
-//      log.info("쿠폰 코드와 할인 금액 불일치");
-//      throw new IncorrectCouponDiscountAmountException(
-//          CustomErrMessage.INCORRECT_COUPON_DISCOUNT_AMOUNT);
-//    }
+    if (!Objects.equals(userCouponUpdateDto.getCouponAmount(), foundCoupon.getDiscountAmount())) {
+      log.info("쿠폰 코드와 할인 금액 불일치");
+      throw new IncorrectCouponDiscountAmountException(
+          CustomErrMessage.INCORRECT_COUPON_DISCOUNT_AMOUNT);
+    }
 
     // 쿠폰 사용을 위한 최소 주문 금액 확인
-    log.info("min order price={}", foundCoupon.getMinOrderPrice());
     if (userCouponUpdateDto.getTotalAmount() < foundCoupon.getMinOrderPrice()) {
       log.info("최소 주문 금액 미달");
       throw new InsufficientMinOrderPriceException(CustomErrMessage.INSUFFICIENT_MIN_ORDER_PRICE);
