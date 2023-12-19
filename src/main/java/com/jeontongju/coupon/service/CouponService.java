@@ -11,6 +11,8 @@ import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import java.sql.Timestamp;
+import java.util.Objects;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,7 @@ public class CouponService {
 
       CouponReceipt foundCouponReceipt =
           getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
+
       // 쿠폰 사용 처리
       foundCouponReceipt.deductCoupon();
     }
@@ -81,12 +84,19 @@ public class CouponService {
 
     Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
 
+    CouponReceipt foundCouponReceipt =
+            getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
+
+    if (foundCouponReceipt.getIsUse()) {
+      throw new AlreadyUseCouponException(CustomErrMessage.ALREADY_USE_COUPON);
+    }
+
     // 쿠폰 만료 여부 확인
     if (!isValidCoupon(foundCoupon.getExpiredAt()))
       throw new CouponExpiredException(CustomErrMessage.EXPIRED_COUPON);
 
     // 쿠폰 코드와 할인 금액 일치 여부 확인
-    if (userCouponUpdateDto.getCouponAmount() != foundCoupon.getDiscountAmount()) {
+    if (!Objects.equals(userCouponUpdateDto.getCouponAmount(), foundCoupon.getDiscountAmount())) {
       throw new IncorrectCouponDiscountAmountException(
           CustomErrMessage.INCORRECT_COUPON_DISCOUNT_AMOUNT);
     }
