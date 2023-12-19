@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 public class CouponConsumer {
 
   private final CouponService couponService;
+  private final CouponProducer couponProducer;
 
   @KafkaListener(topics = KafkaTopicNameInfo.USE_COUPON)
   public void deductCoupon(OrderInfoDto orderInfoDto) {
@@ -25,6 +26,7 @@ public class CouponConsumer {
       log.info("CouponConsumer's deductCoupon executes..");
       couponService.deductCoupon(orderInfoDto);
     } catch (KafkaException e) {
+      couponProducer.sendRollbackPoint(KafkaTopicNameInfo.CANCEL_ORDER_POINT, orderInfoDto);
       throw new KafkaDuringOrderException(CustomErrMessage.ERROR_KAFKA);
     }
   }
@@ -35,6 +37,7 @@ public class CouponConsumer {
     try {
       log.info("CouponConsumer's rollbackCouponUsage executes..");
       couponService.rollbackCouponUsage(orderInfoDto);
+      couponProducer.sendRollbackPoint(KafkaTopicNameInfo.CANCEL_ORDER_POINT, orderInfoDto);
     } catch (KafkaException e) {
       throw new KafkaDuringOrderException(CustomErrMessage.ERROR_KAFKA);
     }
