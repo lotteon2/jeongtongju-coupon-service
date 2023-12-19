@@ -26,12 +26,12 @@ public class CouponConsumer {
       log.info("CouponConsumer's deductCoupon executes..");
       couponService.deductCoupon(orderInfoDto);
     } catch (Exception e) {
-      couponProducer.sendRollbackPoint(KafkaTopicNameInfo.CANCEL_ORDER_POINT, orderInfoDto);
+      couponProducer.sendRollbackPoint("add-point", orderInfoDto);
       throw new KafkaDuringOrderException(CustomErrMessage.ERROR_KAFKA);
     }
   }
 
-  @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_ORDER_COUPON)
+  @KafkaListener(topics = KafkaTopicNameInfo.ROLLBACK_COUPON)
   public void rollbackCouponUsage(OrderInfoDto orderInfoDto) {
 
     try {

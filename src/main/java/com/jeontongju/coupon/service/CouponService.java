@@ -85,24 +85,29 @@ public class CouponService {
     Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
 
     CouponReceipt foundCouponReceipt =
-            getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
+        getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
 
     if (foundCouponReceipt.getIsUse()) {
+      log.info("이미 사용한 쿠폰");
       throw new AlreadyUseCouponException(CustomErrMessage.ALREADY_USE_COUPON);
     }
 
     // 쿠폰 만료 여부 확인
-    if (!isValidCoupon(foundCoupon.getExpiredAt()))
+    if (!isValidCoupon(foundCoupon.getExpiredAt())) {
+      log.info("만료된 쿠폰");
       throw new CouponExpiredException(CustomErrMessage.EXPIRED_COUPON);
-
+    }
+    
     // 쿠폰 코드와 할인 금액 일치 여부 확인
     if (!Objects.equals(userCouponUpdateDto.getCouponAmount(), foundCoupon.getDiscountAmount())) {
+      log.info("쿠폰 코드와 할인 금액 불일치");
       throw new IncorrectCouponDiscountAmountException(
           CustomErrMessage.INCORRECT_COUPON_DISCOUNT_AMOUNT);
     }
 
     // 쿠폰 사용을 위한 최소 주문 금액 확인
     if (userCouponUpdateDto.getTotalAmount() < foundCoupon.getMinOrderPrice()) {
+      log.info("최소 주문 금액 미달");
       throw new InsufficientMinOrderPriceException(CustomErrMessage.INSUFFICIENT_MIN_ORDER_PRICE);
     }
   }
