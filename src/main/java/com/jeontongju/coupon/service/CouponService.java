@@ -38,14 +38,16 @@ public class CouponService {
     log.info("CouponService's deductCoupon executes..");
     UserCouponUpdateDto userCouponUpdateDto = orderInfoDto.getUserCouponUpdateDto();
 
-    Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
+    if (userCouponUpdateDto.getCouponCode() != null) {
+      Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
 
-    checkCouponInfo(userCouponUpdateDto);
+      checkCouponInfo(userCouponUpdateDto);
 
-    CouponReceipt foundCouponReceipt =
-        getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
-    // 쿠폰 사용 처리
-    foundCouponReceipt.deductCoupon();
+      CouponReceipt foundCouponReceipt =
+          getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
+      // 쿠폰 사용 처리
+      foundCouponReceipt.deductCoupon();
+    }
 
     log.info("CouponService's deductCoupon Successful executed!");
     couponProducer.sendUpdateStock(KafkaTopicNameInfo.REDUCE_STOCK, orderInfoDto);
@@ -61,11 +63,13 @@ public class CouponService {
 
     UserCouponUpdateDto userCouponUpdateDto = orderInfoDto.getUserCouponUpdateDto();
 
-    Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
-    CouponReceipt foundCouponReceipt =
-        getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
+    if (userCouponUpdateDto.getCouponCode() != null) {
+      Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
+      CouponReceipt foundCouponReceipt =
+          getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
 
-    foundCouponReceipt.rollbackCoupon();
+      foundCouponReceipt.rollbackCoupon();
+    }
   }
 
   /**
@@ -83,7 +87,8 @@ public class CouponService {
 
     // 쿠폰 코드와 할인 금액 일치 여부 확인
     if (userCouponUpdateDto.getCouponAmount() != foundCoupon.getDiscountAmount()) {
-      throw new IncorrectCouponDiscountAmountException(CustomErrMessage.INCORRECT_COUPON_DISCOUNT_AMOUNT);
+      throw new IncorrectCouponDiscountAmountException(
+          CustomErrMessage.INCORRECT_COUPON_DISCOUNT_AMOUNT);
     }
 
     // 쿠폰 사용을 위한 최소 주문 금액 확인
