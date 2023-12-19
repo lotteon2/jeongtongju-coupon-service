@@ -98,10 +98,10 @@ public class CouponService {
     }
 
     // 쿠폰 만료 여부 확인
-    if (!isValidCoupon(foundCoupon.getExpiredAt())) {
-      log.info("만료된 쿠폰");
-      throw new CouponExpiredException(CustomErrMessage.EXPIRED_COUPON);
-    }
+//    if (!isValidCoupon(foundCoupon.getExpiredAt())) {
+//      log.info("만료된 쿠폰");
+//      throw new CouponExpiredException(CustomErrMessage.EXPIRED_COUPON);
+//    }
     
     // 쿠폰 코드와 할인 금액 일치 여부 확인
 //    if (!Objects.equals(userCouponUpdateDto.getCouponAmount(), foundCoupon.getDiscountAmount())) {
