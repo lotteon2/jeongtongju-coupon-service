@@ -43,7 +43,9 @@ public class CouponService {
     if (userCouponUpdateDto.getCouponCode() != null) {
       Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
 
+      log.info("CouponService's before checkCouponInfo");
       checkCouponInfo(userCouponUpdateDto);
+      log.info("CouponService's after checkCouponInfo");
 
       CouponReceipt foundCouponReceipt =
           getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
