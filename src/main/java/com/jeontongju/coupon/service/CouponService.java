@@ -3,16 +3,14 @@ package com.jeontongju.coupon.service;
 import com.jeontongju.coupon.domain.Coupon;
 import com.jeontongju.coupon.domain.CouponReceipt;
 import com.jeontongju.coupon.exception.*;
-import com.jeontongju.coupon.kafka.CouponProducer;
 import com.jeontongju.coupon.repository.CouponReceiptRepository;
 import com.jeontongju.coupon.repository.CouponRepository;
 import com.jeontongju.coupon.utils.CustomErrMessage;
+import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
-import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import java.sql.Timestamp;
 import java.util.Objects;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,8 +25,6 @@ public class CouponService {
   private final CouponRepository couponRepository;
   private final CouponReceiptRepository couponReceiptRepository;
 
-  private final CouponProducer couponProducer;
-
   /**
    * 주문 및 결제 확정을 위한 쿠폰 사용
    *
@@ -37,7 +33,6 @@ public class CouponService {
   @Transactional
   public void deductCoupon(OrderInfoDto orderInfoDto) {
 
-    log.info("CouponService's deductCoupon executes..");
     UserCouponUpdateDto userCouponUpdateDto = orderInfoDto.getUserCouponUpdateDto();
 
     if (userCouponUpdateDto.getCouponCode() != null) {
@@ -51,9 +46,6 @@ public class CouponService {
       // 쿠폰 사용 처리
       foundCouponReceipt.deductCoupon();
     }
-
-    log.info("CouponService's deductCoupon Successful executed!");
-    couponProducer.sendUpdateStock(KafkaTopicNameInfo.REDUCE_STOCK, orderInfoDto);
   }
 
   /**
@@ -82,7 +74,6 @@ public class CouponService {
    */
   public void checkCouponInfo(UserCouponUpdateDto userCouponUpdateDto) {
 
-    log.info("checkCouponInfo start..");
     Coupon foundCoupon = getCoupon(userCouponUpdateDto.getCouponCode());
 
     CouponReceipt foundCouponReceipt =
@@ -112,7 +103,6 @@ public class CouponService {
       log.info("최소 주문 금액 미달");
       throw new InsufficientMinOrderPriceException(CustomErrMessage.INSUFFICIENT_MIN_ORDER_PRICE);
     }
-    log.info("checkCouponInfo executed.");
   }
 
   /**
@@ -128,6 +118,20 @@ public class CouponService {
 
     int comparisonResult = currentTimestamp.compareTo(expiredAt);
     return comparisonResult <= 0;
+  }
+
+  /**
+   * 주문 취소 시, 해당 쿠폰 미사용 처리
+   *
+   * @param orderCancelDto
+   */
+  @Transactional
+  public void refundCouponByOrderCancel(OrderCancelDto orderCancelDto) {
+
+    Coupon foundCoupon = getCoupon(orderCancelDto.getCouponCode());
+    CouponReceipt foundCouponReceipt =
+        getCouponReceipt(orderCancelDto.getConsumerId(), foundCoupon);
+    foundCouponReceipt.rollbackCoupon();
   }
 
   /**

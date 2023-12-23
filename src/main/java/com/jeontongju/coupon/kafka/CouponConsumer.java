@@ -1,6 +1,7 @@
 package com.jeontongju.coupon.kafka;
 
 import com.jeontongju.coupon.service.CouponService;
+import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +20,14 @@ public class CouponConsumer {
   @KafkaListener(topics = KafkaTopicNameInfo.USE_COUPON)
   public void deductCoupon(OrderInfoDto orderInfoDto) {
 
-    log.info("KafkaListener's topic={}", KafkaTopicNameInfo.USE_COUPON);
     try {
       couponService.deductCoupon(orderInfoDto);
+      // 상품 서버로 재고 차감 요청
+      couponProducer.send(KafkaTopicNameInfo.REDUCE_STOCK, orderInfoDto);
     } catch (Exception e) {
-      log.error("deduct coupon exception={}", e.getMessage());
-      e.printStackTrace();
-      couponProducer.sendRollbackPoint("add-point", orderInfoDto);
+      log.error("During Order Process: Error while deduct coupon={}", e.getMessage());
+      // 회원 서버로 포인트 환불 요청
+      couponProducer.send(KafkaTopicNameInfo.ADD_POINT, orderInfoDto);
     }
   }
 
@@ -34,9 +36,22 @@ public class CouponConsumer {
 
     try {
       couponService.rollbackCouponUsage(orderInfoDto);
-      couponProducer.sendRollbackPoint("add-point", orderInfoDto);
+      // 회원 서버로 포인트 환불 요청
+      couponProducer.send(KafkaTopicNameInfo.ADD_POINT, orderInfoDto);
     } catch (Exception e) {
-      log.error("rollback point exception={}", e.getMessage());
+      log.error("During Order-Rollback Process: Error while rollback coupon={}", e.getMessage());
+    }
+  }
+
+  @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_ORDER_COUPON)
+  public void refundCouponByOrderCancel(OrderCancelDto orderCancelDto) {
+
+    try {
+      couponService.refundCouponByOrderCancel(orderCancelDto);
+      // 결제 서버로 결제 취소 요청
+      couponProducer.send(KafkaTopicNameInfo.CANCEL_ORDER_PAYMENT, orderCancelDto);
+    } catch (Exception e) {
+      log.error("During Order Cancel Process: Error while refund coupon={}", e.getMessage());
     }
   }
 }
