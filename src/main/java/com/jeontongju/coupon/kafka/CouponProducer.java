@@ -11,11 +11,7 @@ public class CouponProducer<T> {
 
   private final KafkaTemplate<String, T> kafkaTemplate;
 
-  public void sendUpdateStock(String topicName, T data) {
-    kafkaTemplate.send(topicName, data);
-  }
-
-  public void sendRollbackPoint(String topicName, T data) {
+  public void send(String topicName, T data) {
     kafkaTemplate.send(topicName, data);
   }
 }
