@@ -36,4 +36,8 @@ public class Coupon {
 
   @Column(name = "min_order_price", nullable = false)
   private Long minOrderPrice;
+
+  public void decrease(Long quantity) {
+    this.issueLimit -= quantity;
+  }
 }

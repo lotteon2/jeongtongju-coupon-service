@@ -14,6 +14,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -153,10 +154,18 @@ public class CouponService {
    * @param couponCode
    * @return Coupon
    */
-  private Coupon getCoupon(String couponCode) {
+  public Coupon getCoupon(String couponCode) {
 
     return couponRepository
         .findByCouponCode(couponCode)
         .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void decreasePromotionCoupon(String couponCode, Long quantity) {
+    Coupon foundCoupon = getCoupon(couponCode);
+    foundCoupon.decrease(quantity);
+
+    couponRepository.saveAndFlush(foundCoupon);
   }
 }
