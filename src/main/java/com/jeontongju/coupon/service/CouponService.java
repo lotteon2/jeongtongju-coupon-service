@@ -2,7 +2,10 @@ package com.jeontongju.coupon.service;
 
 import com.jeontongju.coupon.domain.Coupon;
 import com.jeontongju.coupon.domain.CouponReceipt;
+import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import com.jeontongju.coupon.exception.*;
+import com.jeontongju.coupon.facade.RedissonLockCouponFacade;
+import com.jeontongju.coupon.mapper.CouponMapper;
 import com.jeontongju.coupon.repository.CouponReceiptRepository;
 import com.jeontongju.coupon.repository.CouponRepository;
 import com.jeontongju.coupon.utils.CustomErrMessage;
@@ -10,11 +13,11 @@ import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -25,6 +28,10 @@ public class CouponService {
 
   private final CouponRepository couponRepository;
   private final CouponReceiptRepository couponReceiptRepository;
+  private final RedissonLockCouponFacade redissonLockCouponFacade;
+  private final CouponMapper couponMapper;
+
+  private static final String PROMOTION_COUPON_CODE = "v5F5-4125-WXHz";
 
   /**
    * 주문 및 결제 확정을 위한 쿠폰 사용
@@ -142,10 +149,10 @@ public class CouponService {
    * @param foundCoupon
    * @return CouponReceipt
    */
-  private CouponReceipt getCouponReceipt(Long consumerId, Coupon foundCoupon) {
+  public CouponReceipt getCouponReceipt(Long consumerId, Coupon foundCoupon) {
     return couponReceiptRepository
         .findByCouponReceiptId(consumerId, foundCoupon)
-        .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
+        .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON_RECEIPT));
   }
 
   /**
@@ -161,11 +168,35 @@ public class CouponService {
         .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
   }
 
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void decreasePromotionCoupon(String couponCode, Long quantity) {
-    Coupon foundCoupon = getCoupon(couponCode);
-    foundCoupon.decrease(quantity);
+  /**
+   * 오후 5시 정각, Promotion 쿠폰 수령
+   *
+   * @param consumerId
+   */
+  @Transactional
+  public CurCouponStatusForReceiveResponseDto receivePromotionCoupon(Long consumerId) {
 
-    couponRepository.saveAndFlush(foundCoupon);
+    CurCouponStatusForReceiveResponseDto curCouponStatusDto = couponMapper.toCurCouponStatusDto();
+
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime after5PM =
+        LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 17, 0);
+    if (now.isBefore(after5PM)) {
+      curCouponStatusDto.toggleIsOpen();
+      return curCouponStatusDto;
+    }
+
+    Coupon foundCoupon = getCoupon(PROMOTION_COUPON_CODE);
+    if (foundCoupon.getIssueLimit() == 0) {
+      curCouponStatusDto.toggleIsSoldOut();
+      return curCouponStatusDto;
+    }
+
+    redissonLockCouponFacade.decrease(PROMOTION_COUPON_CODE, 1L);
+    Coupon decreasedCoupon = getCoupon(PROMOTION_COUPON_CODE);
+
+    couponReceiptRepository.save(couponMapper.toCouponReceiptEntity(decreasedCoupon, consumerId));
+
+    return curCouponStatusDto;
   }
 }

@@ -40,4 +40,8 @@ public class Coupon {
   public void decrease(Long quantity) {
     this.issueLimit -= quantity;
   }
+
+  public void assignIssuedLimit(Long issueLimit) {
+    this.issueLimit = issueLimit;
+  }
 }
