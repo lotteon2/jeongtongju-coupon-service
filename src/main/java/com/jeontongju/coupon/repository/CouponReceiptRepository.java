@@ -24,4 +24,7 @@ public interface CouponReceiptRepository extends JpaRepository<CouponReceipt, Co
 
   @Query("SELECT cr FROM CouponReceipt cr WHERE cr.id.consumerId = :consumerId")
   Page<CouponReceipt> findByConsumerId(@Param("consumerId") Long consumerId, Pageable pageable);
+
+  @Query("SELECT cr FROM CouponReceipt cr WHERE cr.id.consumerId = :consumerId AND cr.isUse = :isUse")
+  List<CouponReceipt> findByConsumerIdAndIsUse(@Param("consumerId") Long consumerId, @Param("isUse") boolean isUse);
 }

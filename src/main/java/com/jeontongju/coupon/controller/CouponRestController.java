@@ -1,5 +1,7 @@
 package com.jeontongju.coupon.controller;
 
+import com.jeontongju.coupon.dto.request.OrderPriceForCheckValidRequestDto;
+import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsResponseDto;
 import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
 import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import com.jeontongju.coupon.service.CouponService;
@@ -9,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api")
@@ -35,6 +39,7 @@ public class CouponRestController {
   public ResponseEntity<ResponseFormat<Page<CouponInfoForSingleInquiryResponseDto>>>
       getMyCouponsForListLookup(
           @RequestHeader Long memberId,
+          @RequestParam(value = "search", required = false) String search,
           @RequestParam("page") int page,
           @RequestParam("size") int size) {
 
@@ -44,7 +49,23 @@ public class CouponRestController {
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.name())
                 .detail("쿠폰 목록 조회 성공")
-                .data(couponService.getMyCouponsForListLookup(memberId, page, size))
+                .data(couponService.getMyCouponsForListLookup(memberId, page, size, search))
+                .build());
+  }
+
+  @GetMapping("/consumers/coupons-count")
+  public ResponseEntity<ResponseFormat<AvailableCouponInfoForSummaryNDetailsResponseDto>>
+      getAvailableCouponsWhenOrdering(
+          @RequestHeader Long memberId,
+          @Valid @RequestBody OrderPriceForCheckValidRequestDto checkValidRequestDto) {
+
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<AvailableCouponInfoForSummaryNDetailsResponseDto>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.name())
+                .detail("사용가능한 내 쿠폰 조회 성공")
+                .data(couponService.getAvailableCouponsWhenOrdering(memberId, checkValidRequestDto))
                 .build());
   }
 }

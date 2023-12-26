@@ -2,6 +2,8 @@ package com.jeontongju.coupon.service;
 
 import com.jeontongju.coupon.domain.Coupon;
 import com.jeontongju.coupon.domain.CouponReceipt;
+import com.jeontongju.coupon.dto.request.OrderPriceForCheckValidRequestDto;
+import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsResponseDto;
 import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
 import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import com.jeontongju.coupon.exception.*;
@@ -203,7 +205,12 @@ public class CouponService {
   }
 
   public Page<CouponInfoForSingleInquiryResponseDto> getMyCouponsForListLookup(
-      Long consumerId, int page, int size) {
+      Long consumerId, int page, int size, String search) {
+
+    boolean isUsed = false;
+    if ("used".equals(search)) {
+      isUsed = true;
+    }
 
     Pageable pageable = paginationManager.getPageableByCreatedAt(page, size);
 
@@ -211,14 +218,55 @@ public class CouponService {
         couponReceiptRepository.findByConsumerId(consumerId, pageable);
 
     List<CouponInfoForSingleInquiryResponseDto> couponList = new ArrayList<>();
+    List<CouponInfoForSingleInquiryResponseDto> usedCouponList = new ArrayList<>();
     for (CouponReceipt couponReceipt : foundCouponReceipts) {
-      if (couponReceipt.getIsUse()) continue;
       Coupon foundCoupon = couponReceipt.getId().getCoupon();
-      if (isValidCoupon(foundCoupon.getExpiredAt())) continue;
+      if (couponReceipt.getIsUse() || !isValidCoupon(foundCoupon.getExpiredAt())) {
+        usedCouponList.add(couponMapper.toInquiryDto(foundCoupon));
+        continue;
+      }
       couponList.add(couponMapper.toInquiryDto(foundCoupon));
     }
 
-    return paginationManager.wrapByPage(
-        couponList, pageable, couponReceiptRepository.findByConsumerId(consumerId).size());
+    int totalSize = couponReceiptRepository.findByConsumerId(consumerId).size();
+    return isUsed
+        ? paginationManager.wrapByPage(usedCouponList, pageable, totalSize)
+        : paginationManager.wrapByPage(couponList, pageable, totalSize);
+  }
+
+  /**
+   * 주문시, 사용할 수 있는 쿠폰의 개수와 정보 가져오기
+   *
+   * @param consumerId
+   * @param checkValidRequestDto
+   * @return AvailableCouponInfoForSummaryNDetailsResponseDto
+   */
+  public AvailableCouponInfoForSummaryNDetailsResponseDto getAvailableCouponsWhenOrdering(
+      Long consumerId, OrderPriceForCheckValidRequestDto checkValidRequestDto) {
+
+    List<CouponReceipt> foundCouponReceipts =
+        couponReceiptRepository.findByConsumerIdAndIsUse(consumerId, false);
+
+    List<CouponInfoForSingleInquiryResponseDto> availableCouponList = new ArrayList<>();
+
+    int totalValidCounts = foundCouponReceipts.size();
+    int unavailableCounts = 0;
+    for (CouponReceipt couponReceipt : foundCouponReceipts) {
+      Coupon foundCoupon = couponReceipt.getId().getCoupon();
+      if (!isValidCoupon(foundCoupon.getExpiredAt())) {
+        totalValidCounts -= 1;
+        continue;
+      }
+
+      if (checkValidRequestDto.getTotalAmount() < foundCoupon.getMinOrderPrice()) {
+        unavailableCounts += 1;
+        continue;
+      }
+
+      availableCouponList.add(couponMapper.toInquiryDto(foundCoupon));
+    }
+
+    return couponMapper.toSummaryNDetailsDto(
+        totalValidCounts, (totalValidCounts - unavailableCounts), availableCouponList);
   }
 }

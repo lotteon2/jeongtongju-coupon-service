@@ -3,9 +3,12 @@ package com.jeontongju.coupon.mapper;
 import com.jeontongju.coupon.domain.Coupon;
 import com.jeontongju.coupon.domain.CouponReceipt;
 import com.jeontongju.coupon.domain.CouponReceiptId;
+import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsResponseDto;
 import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
 import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class CouponMapper {
@@ -29,6 +32,18 @@ public class CouponMapper {
         .discountAmount(foundCoupon.getDiscountAmount())
         .expiredAt(foundCoupon.getExpiredAt())
         .minOrderPrice(foundCoupon.getMinOrderPrice())
+        .build();
+  }
+
+  public AvailableCouponInfoForSummaryNDetailsResponseDto toSummaryNDetailsDto(
+      int totalValidCounts,
+      int availableCount,
+      List<CouponInfoForSingleInquiryResponseDto> availableCouponList) {
+
+    return AvailableCouponInfoForSummaryNDetailsResponseDto.builder()
+        .totalCount(totalValidCounts)
+        .availableCount(availableCount)
+        .coupons(availableCouponList)
         .build();
   }
 }
