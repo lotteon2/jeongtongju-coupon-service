@@ -9,10 +9,11 @@ import com.jeontongju.coupon.mapper.CouponMapper;
 import com.jeontongju.coupon.repository.CouponReceiptRepository;
 import com.jeontongju.coupon.repository.CouponRepository;
 import com.jeontongju.coupon.utils.CustomErrMessage;
+import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
-import java.sql.Timestamp;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -119,13 +120,9 @@ public class CouponService {
    * @param expiredAt
    * @return Boolean
    */
-  private Boolean isValidCoupon(Timestamp expiredAt) {
+  private Boolean isValidCoupon(LocalDateTime expiredAt) {
 
-    long currentTimeMillis = System.currentTimeMillis();
-    Timestamp currentTimestamp = new Timestamp(currentTimeMillis);
-
-    int comparisonResult = currentTimestamp.compareTo(expiredAt);
-    return comparisonResult <= 0;
+    return LocalDateTime.now().isBefore(expiredAt);
   }
 
   /**
@@ -198,5 +195,42 @@ public class CouponService {
     couponReceiptRepository.save(couponMapper.toCouponReceiptEntity(decreasedCoupon, consumerId));
 
     return curCouponStatusDto;
+  }
+
+  @Transactional
+  public String giveRegularPaymentsCoupon(
+      ConsumerRegularPaymentsCouponDto regularPaymentsCouponDto) {
+
+    String generatedCouponCode = generateCouponCode();
+    log.info("generatedCoupon: " + generatedCouponCode);
+
+    Coupon issuedCoupon =
+        couponRepository.save(
+            couponMapper.toRegularPaymentsCouponEntity(
+                generatedCouponCode, regularPaymentsCouponDto.getSuccessedAt()));
+
+    couponReceiptRepository.save(
+        couponMapper.toCouponReceiptEntity(issuedCoupon, regularPaymentsCouponDto.getConsumerId()));
+    return generatedCouponCode;
+  }
+
+  public String generateCouponCode() {
+
+    final int CODE_LEN = 14;
+    SecureRandom random = new SecureRandom();
+    StringBuilder builder = new StringBuilder(CODE_LEN);
+
+    final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    for (int i = 0; i < CODE_LEN; i++) {
+      int randomIdx = random.nextInt(CHARACTERS.length());
+      char randomChar = CHARACTERS.charAt(randomIdx);
+      builder.append(randomChar);
+
+      if ((i + 1) % 4 == 0 && (i + 1) != CODE_LEN) {
+        builder.append("-");
+      }
+    }
+
+    return builder.toString();
   }
 }

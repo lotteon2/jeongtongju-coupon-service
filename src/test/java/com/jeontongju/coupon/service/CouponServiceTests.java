@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -115,5 +117,24 @@ public class CouponServiceTests {
 
       assertThat(curCouponStatusForReceiveResponseDto.getIsSoldOut()).isEqualTo(true);
     }
+  }
+
+  @Test
+  @DisplayName("구독 결제 완료 후, 해당 소비자를 위한 구독 쿠폰을 발급해야 한다")
+  public void 구독쿠폰_발급() {
+
+    long consumerId = 1L;
+    ConsumerRegularPaymentsCouponDto build = ConsumerRegularPaymentsCouponDto.builder()
+            .consumerId(consumerId)
+            .successedAt(LocalDateTime.now())
+            .build();
+
+    String generatedCouponCode = couponService.giveRegularPaymentsCoupon(build);
+
+    Coupon foundCoupon = couponService.getCoupon(generatedCouponCode);
+    assertThat(foundCoupon).isNotEqualTo(null);
+
+    CouponReceipt foundCouponReceipt = couponService.getCouponReceipt(consumerId, foundCoupon);
+    assertThat(foundCouponReceipt.getIsUse()).isEqualTo(false);
   }
 }
