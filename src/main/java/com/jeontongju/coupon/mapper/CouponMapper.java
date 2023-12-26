@@ -7,10 +7,9 @@ import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsR
 import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
 import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import io.github.bitbox.bitbox.enums.CouponTypeEnum;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
 import java.time.LocalDateTime;
+import java.util.List;
+import org.springframework.stereotype.Component;
 
 @Component
 public class CouponMapper {
@@ -21,7 +20,7 @@ public class CouponMapper {
 
     return Coupon.builder()
         .couponCode(couponCode)
-        .couponName(CouponTypeEnum.YANGBAN.name())
+        .couponName(CouponTypeEnum.YANGBAN)
         .discountAmount(3000L)
         .issueLimit(1L)
         .issuedAt(issuedAt)
