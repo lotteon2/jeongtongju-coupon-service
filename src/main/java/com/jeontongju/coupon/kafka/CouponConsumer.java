@@ -1,6 +1,7 @@
 package com.jeontongju.coupon.kafka;
 
 import com.jeontongju.coupon.service.CouponService;
+import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
@@ -52,6 +53,17 @@ public class CouponConsumer {
       couponProducer.send(KafkaTopicNameInfo.CANCEL_ORDER_PAYMENT, orderCancelDto);
     } catch (Exception e) {
       log.error("During Order Cancel Process: Error while refund coupon={}", e.getMessage());
+    }
+  }
+
+  @KafkaListener(topics = KafkaTopicNameInfo.ISSUE_REGULAR_PAYMENTS_COUPON)
+  public void giveRegularPaymentsCoupon(ConsumerRegularPaymentsCouponDto regularPaymentsCouponDto) {
+
+    try {
+      couponService.giveRegularPaymentsCoupon(regularPaymentsCouponDto);
+    } catch (Exception e) {
+      log.error(
+          "After Successful Subscription-Payments: Error while give Coupon={}", e.getMessage());
     }
   }
 }
