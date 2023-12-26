@@ -3,10 +3,13 @@ package com.jeontongju.coupon.mapper;
 import com.jeontongju.coupon.domain.Coupon;
 import com.jeontongju.coupon.domain.CouponReceipt;
 import com.jeontongju.coupon.domain.CouponReceiptId;
+import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsResponseDto;
+import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
 import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import io.github.bitbox.bitbox.enums.CouponTypeEnum;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.time.LocalDateTime;
 
 @Component
@@ -36,5 +39,28 @@ public class CouponMapper {
   public CurCouponStatusForReceiveResponseDto toCurCouponStatusDto() {
 
     return CurCouponStatusForReceiveResponseDto.builder().isSoldOut(false).isOpen(true).build();
+  }
+
+  public CouponInfoForSingleInquiryResponseDto toInquiryDto(Coupon foundCoupon) {
+
+    return CouponInfoForSingleInquiryResponseDto.builder()
+        .couponCode(foundCoupon.getCouponCode())
+        .couponName(foundCoupon.getCouponName())
+        .discountAmount(foundCoupon.getDiscountAmount())
+        .expiredAt(foundCoupon.getExpiredAt())
+        .minOrderPrice(foundCoupon.getMinOrderPrice())
+        .build();
+  }
+
+  public AvailableCouponInfoForSummaryNDetailsResponseDto toSummaryNDetailsDto(
+      int totalValidCounts,
+      int availableCount,
+      List<CouponInfoForSingleInquiryResponseDto> availableCouponList) {
+
+    return AvailableCouponInfoForSummaryNDetailsResponseDto.builder()
+        .totalCount(totalValidCounts)
+        .availableCount(availableCount)
+        .coupons(availableCouponList)
+        .build();
   }
 }
