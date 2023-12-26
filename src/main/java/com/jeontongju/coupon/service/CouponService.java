@@ -289,6 +289,13 @@ public class CouponService {
     return generatedCouponCode;
   }
 
+  @Transactional
+  public void issuePromotionCoupons() {
+
+    Coupon foundPromotionCoupon = getCoupon(PROMOTION_COUPON_CODE);
+    foundPromotionCoupon.assignIssuedLimit(100L);
+  }
+
   public String generateCouponCode() {
 
     final int CODE_LEN = 14;
@@ -308,4 +315,6 @@ public class CouponService {
 
     return builder.toString();
   }
+
+
 }
