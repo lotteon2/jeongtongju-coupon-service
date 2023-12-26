@@ -1,7 +1,9 @@
 package com.jeontongju.coupon.domain;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import javax.persistence.*;
+
+import io.github.bitbox.bitbox.enums.CouponTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,8 +21,9 @@ public class Coupon {
   @Column(name = "coupon_code", nullable = false)
   private String couponCode;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "coupon_name", nullable = false)
-  private String couponName;
+  private CouponTypeEnum couponName;
 
   @Column(name = "discount_amount", nullable = false)
   private Long discountAmount;
@@ -29,10 +32,10 @@ public class Coupon {
   private Long issueLimit;
 
   @Column(name = "issued_at", nullable = false)
-  private Timestamp issuedAt;
+  private LocalDateTime issuedAt;
 
   @Column(name = "expired_at", nullable = false)
-  private Timestamp expiredAt;
+  private LocalDateTime expiredAt;
 
   @Column(name = "min_order_price", nullable = false)
   private Long minOrderPrice;

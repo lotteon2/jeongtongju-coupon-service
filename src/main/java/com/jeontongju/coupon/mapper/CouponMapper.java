@@ -3,6 +3,7 @@ package com.jeontongju.coupon.mapper;
 import com.jeontongju.coupon.domain.Coupon;
 import com.jeontongju.coupon.domain.CouponReceipt;
 import com.jeontongju.coupon.domain.CouponReceiptId;
+import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
 import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import org.springframework.stereotype.Component;
 
@@ -18,5 +19,16 @@ public class CouponMapper {
   public CurCouponStatusForReceiveResponseDto toCurCouponStatusDto() {
 
     return CurCouponStatusForReceiveResponseDto.builder().isSoldOut(false).isOpen(true).build();
+  }
+
+  public CouponInfoForSingleInquiryResponseDto toInquiryDto(Coupon foundCoupon) {
+
+    return CouponInfoForSingleInquiryResponseDto.builder()
+        .couponCode(foundCoupon.getCouponCode())
+        .couponName(foundCoupon.getCouponName())
+        .discountAmount(foundCoupon.getDiscountAmount())
+        .expiredAt(foundCoupon.getExpiredAt())
+        .minOrderPrice(foundCoupon.getMinOrderPrice())
+        .build();
   }
 }

@@ -2,6 +2,7 @@ package com.jeontongju.coupon.service;
 
 import com.jeontongju.coupon.domain.Coupon;
 import com.jeontongju.coupon.domain.CouponReceipt;
+import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
 import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import com.jeontongju.coupon.exception.*;
 import com.jeontongju.coupon.facade.RedissonLockCouponFacade;
@@ -9,14 +10,18 @@ import com.jeontongju.coupon.mapper.CouponMapper;
 import com.jeontongju.coupon.repository.CouponReceiptRepository;
 import com.jeontongju.coupon.repository.CouponRepository;
 import com.jeontongju.coupon.utils.CustomErrMessage;
+import com.jeontongju.coupon.utils.PaginationManager;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +35,7 @@ public class CouponService {
   private final CouponReceiptRepository couponReceiptRepository;
   private final RedissonLockCouponFacade redissonLockCouponFacade;
   private final CouponMapper couponMapper;
+  private final PaginationManager<CouponInfoForSingleInquiryResponseDto> paginationManager;
 
   private static final String PROMOTION_COUPON_CODE = "v5F5-4125-WXHz";
 
@@ -119,13 +125,9 @@ public class CouponService {
    * @param expiredAt
    * @return Boolean
    */
-  private Boolean isValidCoupon(Timestamp expiredAt) {
+  private Boolean isValidCoupon(LocalDateTime expiredAt) {
 
-    long currentTimeMillis = System.currentTimeMillis();
-    Timestamp currentTimestamp = new Timestamp(currentTimeMillis);
-
-    int comparisonResult = currentTimestamp.compareTo(expiredAt);
-    return comparisonResult <= 0;
+    return LocalDateTime.now().isBefore(expiredAt);
   }
 
   /**
@@ -198,5 +200,25 @@ public class CouponService {
     couponReceiptRepository.save(couponMapper.toCouponReceiptEntity(decreasedCoupon, consumerId));
 
     return curCouponStatusDto;
+  }
+
+  public Page<CouponInfoForSingleInquiryResponseDto> getMyCouponsForListLookup(
+      Long consumerId, int page, int size) {
+
+    Pageable pageable = paginationManager.getPageableByCreatedAt(page, size);
+
+    Page<CouponReceipt> foundCouponReceipts =
+        couponReceiptRepository.findByConsumerId(consumerId, pageable);
+
+    List<CouponInfoForSingleInquiryResponseDto> couponList = new ArrayList<>();
+    for (CouponReceipt couponReceipt : foundCouponReceipts) {
+      if (couponReceipt.getIsUse()) continue;
+      Coupon foundCoupon = couponReceipt.getId().getCoupon();
+      if (isValidCoupon(foundCoupon.getExpiredAt())) continue;
+      couponList.add(couponMapper.toInquiryDto(foundCoupon));
+    }
+
+    return paginationManager.wrapByPage(
+        couponList, pageable, couponReceiptRepository.findByConsumerId(consumerId).size());
   }
 }

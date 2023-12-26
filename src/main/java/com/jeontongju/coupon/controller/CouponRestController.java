@@ -1,15 +1,14 @@
 package com.jeontongju.coupon.controller;
 
+import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
 import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import com.jeontongju.coupon.service.CouponService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
@@ -29,6 +28,23 @@ public class CouponRestController {
                 .message(HttpStatus.OK.name())
                 .detail("쿠폰 수령 성공")
                 .data(couponService.receivePromotionCoupon(memberId))
+                .build());
+  }
+
+  @GetMapping("/coupons")
+  public ResponseEntity<ResponseFormat<Page<CouponInfoForSingleInquiryResponseDto>>>
+      getMyCouponsForListLookup(
+          @RequestHeader Long memberId,
+          @RequestParam("page") int page,
+          @RequestParam("size") int size) {
+
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Page<CouponInfoForSingleInquiryResponseDto>>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.name())
+                .detail("쿠폰 목록 조회 성공")
+                .data(couponService.getMyCouponsForListLookup(memberId, page, size))
                 .build());
   }
 }
