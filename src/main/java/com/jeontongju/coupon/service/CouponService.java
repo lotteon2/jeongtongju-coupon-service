@@ -16,6 +16,8 @@ import com.jeontongju.coupon.utils.PaginationManager;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
+import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -268,5 +270,42 @@ public class CouponService {
 
     return couponMapper.toSummaryNDetailsDto(
         totalValidCounts, (totalValidCounts - unavailableCounts), availableCouponList);
+  }
+  
+  @Transactional
+  public String giveRegularPaymentsCoupon(
+      ConsumerRegularPaymentsCouponDto regularPaymentsCouponDto) {
+
+    String generatedCouponCode = generateCouponCode();
+    log.info("generatedCoupon: " + generatedCouponCode);
+
+    Coupon issuedCoupon =
+        couponRepository.save(
+            couponMapper.toRegularPaymentsCouponEntity(
+                generatedCouponCode, regularPaymentsCouponDto.getSuccessedAt()));
+
+    couponReceiptRepository.save(
+        couponMapper.toCouponReceiptEntity(issuedCoupon, regularPaymentsCouponDto.getConsumerId()));
+    return generatedCouponCode;
+  }
+
+  public String generateCouponCode() {
+
+    final int CODE_LEN = 14;
+    SecureRandom random = new SecureRandom();
+    StringBuilder builder = new StringBuilder(CODE_LEN);
+
+    final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    for (int i = 0; i < CODE_LEN; i++) {
+      int randomIdx = random.nextInt(CHARACTERS.length());
+      char randomChar = CHARACTERS.charAt(randomIdx);
+      builder.append(randomChar);
+
+      if ((i + 1) % 4 == 0 && (i + 1) != CODE_LEN) {
+        builder.append("-");
+      }
+    }
+
+    return builder.toString();
   }
 }
