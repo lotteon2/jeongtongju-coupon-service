@@ -4,6 +4,9 @@ import com.jeontongju.coupon.service.CouponService;
 import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
+import io.github.bitbox.bitbox.dto.ServerErrorForNotificationDto;
+import io.github.bitbox.bitbox.enums.NotificationTypeEnum;
+import io.github.bitbox.bitbox.enums.RecipientTypeEnum;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +32,14 @@ public class CouponConsumer {
       log.error("During Order Process: Error while deduct coupon={}", e.getMessage());
       // 회원 서버로 포인트 환불 요청
       couponProducer.send(KafkaTopicNameInfo.ADD_POINT, orderInfoDto);
+      couponProducer.send(
+          KafkaTopicNameInfo.SEND_ERROR_NOTIFICATION,
+          ServerErrorForNotificationDto.builder()
+              .recipientId(orderInfoDto.getUserCouponUpdateDto().getConsumerId())
+              .recipientType(RecipientTypeEnum.ROLE_CONSUMER)
+              .notificationType(NotificationTypeEnum.INTERNAL_COUPON_SERVER_ERROR)
+              .error(orderInfoDto)
+              .build());
     }
   }
 
