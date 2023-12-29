@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -198,6 +200,12 @@ public class CouponService {
       return curCouponStatusDto;
     }
 
+    Optional<CouponReceipt> foundCouponReceipt =
+        couponReceiptRepository.findByCouponReceiptId(consumerId, foundCoupon);
+    if (foundCouponReceipt.isPresent()) {
+      throw new AlreadyReceiveCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
+    }
+
     redissonLockCouponFacade.decrease(PROMOTION_COUPON_CODE, 1L);
     Coupon decreasedCoupon = getCoupon(PROMOTION_COUPON_CODE);
 
@@ -271,7 +279,7 @@ public class CouponService {
     return couponMapper.toSummaryNDetailsDto(
         totalValidCounts, (totalValidCounts - unavailableCounts), availableCouponList);
   }
-  
+
   @Transactional
   public String giveRegularPaymentsCoupon(
       ConsumerRegularPaymentsCouponDto regularPaymentsCouponDto) {
