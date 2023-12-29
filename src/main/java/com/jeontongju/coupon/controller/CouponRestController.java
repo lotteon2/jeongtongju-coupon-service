@@ -64,7 +64,7 @@ public class CouponRestController {
             ResponseFormat.<AvailableCouponInfoForSummaryNDetailsResponseDto>builder()
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.name())
-                .detail("사용가능한 내 쿠폰 조회 성공")
+                .detail("사용 가능한 내 쿠폰 조회 성공")
                 .data(couponService.getAvailableCouponsWhenOrdering(memberId, checkValidRequestDto))
                 .build());
   }

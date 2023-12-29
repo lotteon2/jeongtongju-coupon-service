@@ -9,5 +9,6 @@ public interface CustomErrMessage {
   String INSUFFICIENT_MIN_ORDER_PRICE = "최소 주문 금액 미달";
   String INCORRECT_COUPON_DISCOUNT_AMOUNT = "쿠폰 코드와 할인 금액 불일치";
   String ALREADY_USE_COUPON = "이미 사용한 쿠폰";
+  String ALREADY_RECEIVE_COUPON = "이미 수령한 쿠폰";
   String EXHAUSTED_COUPON = "쿠폰 소진";
 }
