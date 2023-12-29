@@ -1,7 +1,6 @@
 package com.jeontongju.coupon.utils;
 
 import com.jeontongju.coupon.domain.Coupon;
-import com.jeontongju.coupon.exception.CouponExhaustedException;
 import com.jeontongju.coupon.exception.CouponNotFoundException;
 import com.jeontongju.coupon.repository.CouponRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +22,7 @@ public class ReceiveManager {
    * @return
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void decreasePromotionCoupon(String couponCode, Long quantity)
-      throws CouponExhaustedException {
+  public void decreasePromotionCoupon(String couponCode, Long quantity) {
 
     Coupon foundCoupon =
         couponRepository
