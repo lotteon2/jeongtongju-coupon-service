@@ -20,7 +20,7 @@ public class RedissonLockCouponFacade {
 
     RLock lock = redissonClient.getLock(id);
     try {
-      boolean available = lock.tryLock(40, 1, TimeUnit.SECONDS);
+      boolean available = lock.tryLock(15, 1, TimeUnit.SECONDS);
 
       if (!available) {
         log.info("lock 획득 실패");
@@ -30,7 +30,11 @@ public class RedissonLockCouponFacade {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } finally {
-      lock.unlock();
+      log.info("finally executes..");
+      if(lock.isLocked() && lock.isHeldByCurrentThread()) {
+        log.info("finally unlock executes..");
+        lock.unlock();
+      }
     }
   }
 }
