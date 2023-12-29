@@ -20,7 +20,7 @@ public class RedissonLockCouponFacade {
 
     RLock lock = redissonClient.getLock(id);
     try {
-      boolean available = lock.tryLock(15, 1, TimeUnit.SECONDS);
+      boolean available = lock.tryLock(40, 1, TimeUnit.SECONDS);
 
       if (!available) {
         log.info("lock 획득 실패");
