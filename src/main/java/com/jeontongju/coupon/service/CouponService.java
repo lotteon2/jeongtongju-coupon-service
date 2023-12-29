@@ -323,6 +323,11 @@ public class CouponService {
 
   @Transactional
   public void getCouponTest() {
-    redissonLockCouponFacade.decrease("v5F5-4125-WXHz", 1L);
+
+    Coupon foundCoupon = getCoupon(PROMOTION_COUPON_CODE);
+    if (foundCoupon.getIssueLimit() == 0) {
+      throw new CouponExhaustedException(CustomErrMessage.EXHAUSTED_COUPON);
+    }
+    redissonLockCouponFacade.decrease(PROMOTION_COUPON_CODE, 1L);
   }
 }
