@@ -11,4 +11,5 @@ public interface CustomErrMessage {
   String ALREADY_USE_COUPON = "이미 사용한 쿠폰";
   String ALREADY_RECEIVE_COUPON = "이미 수령한 쿠폰";
   String EXHAUSTED_COUPON = "쿠폰 소진";
+  String NOT_OPEN_PROMOTION_COUPON_EVENT = "프로모션 쿠폰 이벤트 시각 미오픈";
 }

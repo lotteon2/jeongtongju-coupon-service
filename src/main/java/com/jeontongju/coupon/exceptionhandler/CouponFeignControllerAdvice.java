@@ -1,6 +1,8 @@
 package com.jeontongju.coupon.exceptionhandler;
 
+import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import com.jeontongju.coupon.exception.*;
+import com.jeontongju.coupon.mapper.CouponMapper;
 import io.github.bitbox.bitbox.dto.FeignFormat;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import io.github.bitbox.bitbox.enums.FailureTypeEnum;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class CouponFeignControllerAdvice {
+
+  private final CouponMapper couponMapper;
 
   @ExceptionHandler(CouponNotFoundException.class)
   public FeignFormat<Void> handleNotFoundCoupon() {
@@ -57,6 +61,24 @@ public class CouponFeignControllerAdvice {
     return FeignFormat.<Void>builder()
         .code(HttpStatus.OK.value())
         .failure(FailureTypeEnum.INCORRECT_COUPON_DISCOUNT_AMOUNT)
+        .build();
+  }
+
+  @ExceptionHandler(NotOpenPromotionCouponEventException.class)
+  public FeignFormat<CurCouponStatusForReceiveResponseDto> handleNotOpenPromotionCouponEvent() {
+
+    return FeignFormat.<CurCouponStatusForReceiveResponseDto>builder()
+        .code(HttpStatus.BAD_REQUEST.value())
+        .data(couponMapper.toCurCouponStatusDto(false, false))
+        .build();
+  }
+
+  @ExceptionHandler(CouponExhaustedException.class)
+  public FeignFormat<CurCouponStatusForReceiveResponseDto> handleCouponExhausted() {
+
+    return FeignFormat.<CurCouponStatusForReceiveResponseDto>builder()
+        .code(HttpStatus.BAD_REQUEST.value())
+        .data(couponMapper.toCurCouponStatusDto(true, true))
         .build();
   }
 
