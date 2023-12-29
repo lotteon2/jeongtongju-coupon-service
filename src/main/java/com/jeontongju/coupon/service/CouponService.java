@@ -316,5 +316,7 @@ public class CouponService {
     return builder.toString();
   }
 
-
+  public void getCouponTest() {
+    redissonLockCouponFacade.decrease("v5F5-4125-WXHz", 1L);
+  }
 }
