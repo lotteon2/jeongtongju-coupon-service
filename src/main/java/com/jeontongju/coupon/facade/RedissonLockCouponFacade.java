@@ -1,6 +1,6 @@
 package com.jeontongju.coupon.facade;
 
-import com.jeontongju.coupon.utils.ReceiveManager;
+import com.jeontongju.coupon.service.CouponService;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,27 +14,24 @@ import org.springframework.stereotype.Component;
 public class RedissonLockCouponFacade {
 
   private final RedissonClient redissonClient;
-  private final ReceiveManager receiveManager;
+  private final CouponService couponService;
 
   public void decrease(String id, Long quantity) {
 
     RLock lock = redissonClient.getLock(id);
     try {
-      boolean available = lock.tryLock(15, 1, TimeUnit.SECONDS);
+      boolean available = lock.tryLock(10, 1, TimeUnit.SECONDS);
 
       if (!available) {
         log.info("lock 획득 실패");
         return;
       }
-      receiveManager.decreasePromotionCoupon(id, quantity);
+      couponService.decreasePromotionCoupon(id, quantity);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } finally {
       log.info("finally executes..");
-      if(lock.isHeldByCurrentThread()) {
-        log.info("finally unlock executes..");
-        lock.unlock();
-      }
+      lock.unlock();
     }
   }
 }
