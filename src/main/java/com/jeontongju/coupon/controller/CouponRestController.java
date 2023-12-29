@@ -68,4 +68,17 @@ public class CouponRestController {
                 .data(couponService.getAvailableCouponsWhenOrdering(memberId, checkValidRequestDto))
                 .build());
   }
+
+  @PatchMapping("/coupons/test")
+  public ResponseEntity<ResponseFormat<Void>> getCouponTest() {
+
+    couponService.getCouponTest();
+    return ResponseEntity.ok()
+        .body(
+            ResponseFormat.<Void>builder()
+                .code(HttpStatus.OK.value())
+                .message(HttpStatus.OK.name())
+                .detail("[테스트] 쿠폰 수령 성공")
+                .build());
+  }
 }
