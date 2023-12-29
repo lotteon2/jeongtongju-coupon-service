@@ -32,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-//@Transactional(readOnly = true)
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CouponService {
 
@@ -215,17 +215,24 @@ public class CouponService {
       Long consumerId, int page, int size, String search) {
 
     boolean isUsed = false;
+    boolean isAvailable = false;
+
     if ("used".equals(search)) {
       isUsed = true;
     }
 
+    if("available".equals(search)) {
+      isAvailable = true;
+    }
+    
     Pageable pageable = paginationManager.getPageableByCreatedAt(page, size);
 
     Page<CouponReceipt> foundCouponReceipts =
         couponReceiptRepository.findByConsumerId(consumerId, pageable);
 
-    List<CouponInfoForSingleInquiryResponseDto> couponList = new ArrayList<>();
-    List<CouponInfoForSingleInquiryResponseDto> usedCouponList = new ArrayList<>();
+    List<CouponInfoForSingleInquiryResponseDto> couponList = new ArrayList<>(); // 사용 가능한 쿠폰 내역
+    List<CouponInfoForSingleInquiryResponseDto> usedCouponList = new ArrayList<>(); // 사용 불가능한 쿠폰 내역
+
     for (CouponReceipt couponReceipt : foundCouponReceipts) {
       Coupon foundCoupon = couponReceipt.getId().getCoupon();
       if (couponReceipt.getIsUse() || !isValidCoupon(foundCoupon.getExpiredAt())) {
@@ -236,6 +243,11 @@ public class CouponService {
     }
 
     int totalSize = couponReceiptRepository.findByConsumerId(consumerId).size();
+
+    if(!isUsed && !isAvailable) {
+      return paginationManager.wrapByPage(new ArrayList<>(), pageable, totalSize);
+    }
+
     return isUsed
         ? paginationManager.wrapByPage(usedCouponList, pageable, totalSize)
         : paginationManager.wrapByPage(couponList, pageable, totalSize);
