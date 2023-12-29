@@ -32,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
+//@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CouponService {
 
@@ -180,7 +180,7 @@ public class CouponService {
    *
    * @param consumerId
    */
-  @Transactional
+//  @Transactional
   public CurCouponStatusForReceiveResponseDto receivePromotionCoupon(Long consumerId) {
 
     LocalDateTime now = LocalDateTime.now();
