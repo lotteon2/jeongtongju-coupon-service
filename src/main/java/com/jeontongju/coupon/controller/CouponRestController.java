@@ -3,7 +3,7 @@ package com.jeontongju.coupon.controller;
 import com.jeontongju.coupon.dto.request.OrderPriceForCheckValidRequestDto;
 import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsResponseDto;
 import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
-import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
+import com.jeontongju.coupon.facade.RedissonLockCouponFacade;
 import com.jeontongju.coupon.service.CouponService;
 import io.github.bitbox.bitbox.dto.ResponseFormat;
 import lombok.RequiredArgsConstructor;
@@ -20,18 +20,23 @@ import javax.validation.Valid;
 public class CouponRestController {
 
   private final CouponService couponService;
+  private final RedissonLockCouponFacade redissonLockCouponFacade;
 
   @PostMapping("/consumers/coupons")
-  public ResponseEntity<ResponseFormat<CurCouponStatusForReceiveResponseDto>>
-      receivePromotionCoupon(@RequestHeader Long memberId) {
+  public ResponseEntity<ResponseFormat<Void>> receivePromotionCoupon(@RequestHeader Long memberId) {
+
+    final String PROMOTION_COUPON_CODE = "v5F5-4125-WXHz";
+
+    couponService.preCheck(memberId);
+    redissonLockCouponFacade.decrease(PROMOTION_COUPON_CODE, 1L);
+    couponService.AfterProcessing(PROMOTION_COUPON_CODE, memberId);
 
     return ResponseEntity.ok()
         .body(
-            ResponseFormat.<CurCouponStatusForReceiveResponseDto>builder()
+            ResponseFormat.<Void>builder()
                 .code(HttpStatus.OK.value())
                 .message(HttpStatus.OK.name())
                 .detail("쿠폰 수령 성공")
-                .data(couponService.receivePromotionCoupon(memberId))
                 .build());
   }
 
@@ -72,7 +77,7 @@ public class CouponRestController {
   @PatchMapping("/coupons/test")
   public ResponseEntity<ResponseFormat<Void>> getCouponTest() {
 
-    couponService.getCouponTest();
+    redissonLockCouponFacade.decrease("v5F5-4125-WXHz", 1L);
     return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()

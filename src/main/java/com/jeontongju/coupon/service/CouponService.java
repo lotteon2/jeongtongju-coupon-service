@@ -5,9 +5,7 @@ import com.jeontongju.coupon.domain.CouponReceipt;
 import com.jeontongju.coupon.dto.request.OrderPriceForCheckValidRequestDto;
 import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsResponseDto;
 import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
-import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import com.jeontongju.coupon.exception.*;
-import com.jeontongju.coupon.facade.RedissonLockCouponFacade;
 import com.jeontongju.coupon.mapper.CouponMapper;
 import com.jeontongju.coupon.repository.CouponReceiptRepository;
 import com.jeontongju.coupon.repository.CouponRepository;
@@ -28,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -38,7 +37,6 @@ public class CouponService {
 
   private final CouponRepository couponRepository;
   private final CouponReceiptRepository couponReceiptRepository;
-  private final RedissonLockCouponFacade redissonLockCouponFacade;
   private final CouponMapper couponMapper;
   private final PaginationManager<CouponInfoForSingleInquiryResponseDto> paginationManager;
 
@@ -150,65 +148,65 @@ public class CouponService {
   }
 
   /**
-   * consumerId와 coupon으로 CouponReceipt(쿠폰 수령 내역) 찾기
+   * Promotion 쿠폰 수령을 위한 사전 체크
    *
-   * @param consumerId
-   * @param foundCoupon
-   * @return CouponReceipt
+   * @param consumerId 로그인 한 회원 식별자
    */
-  public CouponReceipt getCouponReceipt(Long consumerId, Coupon foundCoupon) {
-    return couponReceiptRepository
-        .findByCouponReceiptId(consumerId, foundCoupon)
-        .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON_RECEIPT));
-  }
-
-  /**
-   * couponCode로 Coupon 찾기 (공통화)
-   *
-   * @param couponCode
-   * @return Coupon
-   */
-  public Coupon getCoupon(String couponCode) {
-
-    return couponRepository
-        .findByCouponCode(couponCode)
-        .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
-  }
-
-  /**
-   * 오후 5시 정각, Promotion 쿠폰 수령
-   *
-   * @param consumerId
-   */
-//  @Transactional
-  public CurCouponStatusForReceiveResponseDto receivePromotionCoupon(Long consumerId) {
+  public void preCheck(Long consumerId)
+      throws NotOpenPromotionCouponEventException, AlreadyReceiveCouponException {
 
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime after5PM =
         LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 17, 0);
 
-//    if (now.isBefore(after5PM)) {
-//      throw new NotOpenPromotionCouponEventException(
-//          CustomErrMessage.NOT_OPEN_PROMOTION_COUPON_EVENT);
-//    }
+    // test를 위해 주석 처리
+    if (now.isBefore(after5PM)) {
+      throw new NotOpenPromotionCouponEventException(
+          CustomErrMessage.NOT_OPEN_PROMOTION_COUPON_EVENT);
+    }
 
     Coupon foundCoupon = getCoupon(PROMOTION_COUPON_CODE);
-    if (foundCoupon.getIssueLimit() == 0) {
-      throw new CouponExhaustedException(CustomErrMessage.EXHAUSTED_COUPON);
-    }
 
     Optional<CouponReceipt> foundCouponReceipt =
         couponReceiptRepository.findByCouponReceiptId(consumerId, foundCoupon);
     if (foundCouponReceipt.isPresent()) {
       throw new AlreadyReceiveCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
     }
+  }
 
-    redissonLockCouponFacade.decrease(PROMOTION_COUPON_CODE, 1L);
-    Coupon decreasedCoupon = getCoupon(PROMOTION_COUPON_CODE);
+  /**
+   * 쿠폰 수량 차감
+   *
+   * @param couponCode Promotion 쿠폰 코드(식별자)
+   * @param quantity 차감할 쿠폰 수량
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void decreasePromotionCoupon(String couponCode, Long quantity) {
 
-    couponReceiptRepository.save(couponMapper.toCouponReceiptEntity(decreasedCoupon, consumerId));
+    Coupon foundCoupon =
+        couponRepository
+            .findByCouponCode(couponCode)
+            .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
 
-    return couponMapper.toCurCouponStatusDto(false, true);
+    if (foundCoupon.getIssueLimit() <= 0L) {
+      //      return;
+      throw new CouponExhaustedException(CustomErrMessage.EXHAUSTED_COUPON);
+    }
+    foundCoupon.decrease(quantity);
+    couponRepository.saveAndFlush(foundCoupon);
+  }
+
+  /**
+   * 쿠폰 수령 후, 수령 내역 저장
+   *
+   * @param couponCode 수령한 쿠폰 코드(식별자)
+   * @param consumerId 로그인 한 회원 식별자
+   */
+  @Transactional
+  public void AfterProcessing(String couponCode, Long consumerId) {
+
+    Coupon foundCoupon = getCoupon(couponCode);
+    couponReceiptRepository.save(couponMapper.toCouponReceiptEntity(foundCoupon, consumerId));
   }
 
   public Page<CouponInfoForSingleInquiryResponseDto> getMyCouponsForListLookup(
@@ -221,10 +219,10 @@ public class CouponService {
       isUsed = true;
     }
 
-    if("available".equals(search)) {
+    if ("available".equals(search)) {
       isAvailable = true;
     }
-    
+
     Pageable pageable = paginationManager.getPageableByCreatedAt(page, size);
 
     Page<CouponReceipt> foundCouponReceipts =
@@ -244,7 +242,7 @@ public class CouponService {
 
     int totalSize = couponReceiptRepository.findByConsumerId(consumerId).size();
 
-    if(!isUsed && !isAvailable) {
+    if (!isUsed && !isAvailable) {
       return paginationManager.wrapByPage(new ArrayList<>(), pageable, totalSize);
     }
 
@@ -333,13 +331,29 @@ public class CouponService {
     return builder.toString();
   }
 
-  @Transactional
-  public void getCouponTest() {
+  /**
+   * consumerId와 coupon으로 CouponReceipt(쿠폰 수령 내역) 찾기
+   *
+   * @param consumerId
+   * @param foundCoupon
+   * @return CouponReceipt
+   */
+  public CouponReceipt getCouponReceipt(Long consumerId, Coupon foundCoupon) {
+    return couponReceiptRepository
+        .findByCouponReceiptId(consumerId, foundCoupon)
+        .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON_RECEIPT));
+  }
 
-    Coupon foundCoupon = getCoupon(PROMOTION_COUPON_CODE);
-    if (foundCoupon.getIssueLimit() == 0) {
-      throw new CouponExhaustedException(CustomErrMessage.EXHAUSTED_COUPON);
-    }
-    redissonLockCouponFacade.decrease(PROMOTION_COUPON_CODE, 1L);
+  /**
+   * couponCode로 Coupon 찾기 (공통화)
+   *
+   * @param couponCode
+   * @return Coupon
+   */
+  public Coupon getCoupon(String couponCode) {
+
+    return couponRepository
+        .findByCouponCode(couponCode)
+        .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
   }
 }

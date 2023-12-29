@@ -3,13 +3,10 @@ package com.jeontongju.coupon;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.jeontongju.coupon.domain.Coupon;
-import com.jeontongju.coupon.facade.RedissonLockCouponFacade;
 import com.jeontongju.coupon.service.CouponService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import com.jeontongju.coupon.utils.ReceiveManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class CouponApplicationTests {
 
   @Autowired private CouponService couponService;
-
-  @Autowired private RedissonLockCouponFacade redissonLockCouponFacade;
-  @Autowired private ReceiveManager receiveManager;
+  final String PROMOTION_COUPON_CODE = "v5F5-4125-WXHz";
 
   @Test
   @DisplayName("프로모션 쿠폰 수령 시, 동시에 요청이 들어오면 Race Condition 문제가 생긴다.")
@@ -37,7 +32,7 @@ class CouponApplicationTests {
       executorService.submit(
           () -> {
             try {
-              receiveManager.decreasePromotionCoupon("v5F5-4125-WXHz", 1L);
+                couponService.decreasePromotionCoupon(PROMOTION_COUPON_CODE, 1L);
             } finally {
               latch.countDown();
             }
@@ -46,7 +41,7 @@ class CouponApplicationTests {
 
     latch.await();
 
-    Coupon foundCoupon = couponService.getCoupon("v5F5-4125-WXHz");
+    Coupon foundCoupon = couponService.getCoupon(PROMOTION_COUPON_CODE);
     assertThat(foundCoupon.getIssueLimit()).isNotEqualTo(0L);
   }
 }
