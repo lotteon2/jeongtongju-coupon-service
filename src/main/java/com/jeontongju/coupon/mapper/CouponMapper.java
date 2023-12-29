@@ -35,11 +35,6 @@ public class CouponMapper {
     return CouponReceipt.builder().id(build).isUse(false).build();
   }
 
-  public CurCouponStatusForReceiveResponseDto toCurCouponStatusDto() {
-
-    return CurCouponStatusForReceiveResponseDto.builder().isSoldOut(false).isOpen(true).build();
-  }
-
   public CouponInfoForSingleInquiryResponseDto toInquiryDto(Coupon foundCoupon) {
 
     return CouponInfoForSingleInquiryResponseDto.builder()
@@ -60,6 +55,15 @@ public class CouponMapper {
         .totalCount(totalValidCounts)
         .availableCount(availableCount)
         .coupons(availableCouponList)
+        .build();
+  }
+
+  public CurCouponStatusForReceiveResponseDto toCurCouponStatusDto(
+      boolean isSoldOut, boolean isOpen) {
+
+    return CurCouponStatusForReceiveResponseDto.builder()
+        .isSoldOut(isSoldOut)
+        .isOpen(isOpen)
         .build();
   }
 }

@@ -13,17 +13,16 @@ import com.jeontongju.coupon.repository.CouponReceiptRepository;
 import com.jeontongju.coupon.repository.CouponRepository;
 import com.jeontongju.coupon.utils.CustomErrMessage;
 import com.jeontongju.coupon.utils.PaginationManager;
+import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
 import io.github.bitbox.bitbox.dto.OrderCancelDto;
 import io.github.bitbox.bitbox.dto.OrderInfoDto;
 import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
-import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -184,20 +183,18 @@ public class CouponService {
   @Transactional
   public CurCouponStatusForReceiveResponseDto receivePromotionCoupon(Long consumerId) {
 
-    CurCouponStatusForReceiveResponseDto curCouponStatusDto = couponMapper.toCurCouponStatusDto();
-
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime after5PM =
         LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 17, 0);
-    if (now.isBefore(after5PM)) {
-      curCouponStatusDto.toggleIsOpen();
-      return curCouponStatusDto;
-    }
+
+//    if (now.isBefore(after5PM)) {
+//      throw new NotOpenPromotionCouponEventException(
+//          CustomErrMessage.NOT_OPEN_PROMOTION_COUPON_EVENT);
+//    }
 
     Coupon foundCoupon = getCoupon(PROMOTION_COUPON_CODE);
     if (foundCoupon.getIssueLimit() == 0) {
-      curCouponStatusDto.toggleIsSoldOut();
-      return curCouponStatusDto;
+      throw new CouponExhaustedException(CustomErrMessage.EXHAUSTED_COUPON);
     }
 
     Optional<CouponReceipt> foundCouponReceipt =
@@ -211,7 +208,7 @@ public class CouponService {
 
     couponReceiptRepository.save(couponMapper.toCouponReceiptEntity(decreasedCoupon, consumerId));
 
-    return curCouponStatusDto;
+    return couponMapper.toCurCouponStatusDto(false, true);
   }
 
   public Page<CouponInfoForSingleInquiryResponseDto> getMyCouponsForListLookup(

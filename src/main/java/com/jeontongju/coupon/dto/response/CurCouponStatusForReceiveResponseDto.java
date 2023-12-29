@@ -13,12 +13,4 @@ public class CurCouponStatusForReceiveResponseDto {
 
   private Boolean isSoldOut;
   private Boolean isOpen;
-
-  public void toggleIsSoldOut() {
-    this.isSoldOut = !this.isSoldOut;
-  }
-
-  public void toggleIsOpen() {
-    this.isOpen = !this.isOpen;
-  }
 }
