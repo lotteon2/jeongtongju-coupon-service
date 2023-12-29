@@ -31,7 +31,7 @@ public class RedissonLockCouponFacade {
       throw new RuntimeException(e);
     } finally {
       log.info("finally executes..");
-      if(lock.isLocked() && lock.isHeldByCurrentThread()) {
+      if(lock.isHeldByCurrentThread()) {
         log.info("finally unlock executes..");
         lock.unlock();
       }
