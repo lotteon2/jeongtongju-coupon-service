@@ -45,7 +45,7 @@ public class CouponService {
   /**
    * 주문 및 결제 확정을 위한 쿠폰 사용
    *
-   * @param orderInfoDto
+   * @param orderInfoDto 주문 정보
    */
   @Transactional
   public void deductCoupon(OrderInfoDto orderInfoDto) {
@@ -68,7 +68,7 @@ public class CouponService {
   /**
    * 주문 및 결제 로직에서 에러 발생 시, 쿠폰 사용 롤백
    *
-   * @param orderInfoDto
+   * @param orderInfoDto 롤백할 주문 정보
    */
   @Transactional
   public void rollbackCouponUsage(OrderInfoDto orderInfoDto) {
@@ -87,7 +87,7 @@ public class CouponService {
   /**
    * 쿠폰 유효성 검증
    *
-   * @param userCouponUpdateDto
+   * @param userCouponUpdateDto 쿠폰 유효성 검증을 위해 필요한 정보
    */
   public void checkCouponInfo(UserCouponUpdateDto userCouponUpdateDto) {
 
@@ -98,26 +98,26 @@ public class CouponService {
 
     log.info("foundCouponReceipt: " + foundCouponReceipt.getId().getCoupon().getCouponCode());
     if (foundCouponReceipt.getIsUse()) {
-      log.info("이미 사용한 쿠폰");
+      log.error("이미 사용한 쿠폰");
       throw new AlreadyUseCouponException(CustomErrMessage.ALREADY_USE_COUPON);
     }
 
     // 쿠폰 만료 여부 확인
     if (!isValidCoupon(foundCoupon.getExpiredAt())) {
-      log.info("만료된 쿠폰");
+      log.error("만료된 쿠폰");
       throw new CouponExpiredException(CustomErrMessage.EXPIRED_COUPON);
     }
 
     // 쿠폰 코드와 할인 금액 일치 여부 확인
     if (!Objects.equals(userCouponUpdateDto.getCouponAmount(), foundCoupon.getDiscountAmount())) {
-      log.info("쿠폰 코드와 할인 금액 불일치");
+      log.error("쿠폰 코드와 할인 금액 불일치");
       throw new IncorrectCouponDiscountAmountException(
           CustomErrMessage.INCORRECT_COUPON_DISCOUNT_AMOUNT);
     }
 
     // 쿠폰 사용을 위한 최소 주문 금액 확인
     if (userCouponUpdateDto.getTotalAmount() < foundCoupon.getMinOrderPrice()) {
-      log.info("최소 주문 금액 미달");
+      log.error("최소 주문 금액 미달");
       throw new InsufficientMinOrderPriceException(CustomErrMessage.INSUFFICIENT_MIN_ORDER_PRICE);
     }
   }
@@ -125,8 +125,8 @@ public class CouponService {
   /**
    * 해당 쿠폰 만료 여부 확인
    *
-   * @param expiredAt
-   * @return Boolean
+   * @param expiredAt 해당 쿠폰 만료 시각
+   * @return {Boolean} 해당 쿠폰 만료 여부
    */
   private Boolean isValidCoupon(LocalDateTime expiredAt) {
 
@@ -136,7 +136,7 @@ public class CouponService {
   /**
    * 주문 취소 시, 해당 쿠폰 미사용 처리
    *
-   * @param orderCancelDto
+   * @param orderCancelDto 주문 취소 정보
    */
   @Transactional
   public void refundCouponByOrderCancel(OrderCancelDto orderCancelDto) {
@@ -254,9 +254,9 @@ public class CouponService {
   /**
    * 주문시, 사용할 수 있는 쿠폰의 개수와 정보 가져오기
    *
-   * @param consumerId
-   * @param checkValidRequestDto
-   * @return AvailableCouponInfoForSummaryNDetailsResponseDto
+   * @param consumerId 로그인 한 소비자 식별자
+   * @param checkValidRequestDto 쿠폰 사용 여부 확인을 위해 필요한 총 주문 금액
+   * @return {AvailableCouponInfoForSummaryNDetailsResponseDto} 유효한 쿠폰 중 사용 가능한 쿠폰 개수 및 정보
    */
   public AvailableCouponInfoForSummaryNDetailsResponseDto getAvailableCouponsWhenOrdering(
       Long consumerId, OrderPriceForCheckValidRequestDto checkValidRequestDto) {
@@ -287,12 +287,15 @@ public class CouponService {
         totalValidCounts, (totalValidCounts - unavailableCounts), availableCouponList);
   }
 
+  /**
+   * 구독 결제 완료 후, 해당 소비자 구독 전용 쿠폰 자동 수령 처리
+   *
+   * @param regularPaymentsCouponDto 구독 결제 정보(소비자, 결제 완료 시각)
+   */
   @Transactional
-  public String giveRegularPaymentsCoupon(
-      ConsumerRegularPaymentsCouponDto regularPaymentsCouponDto) {
+  public void giveRegularPaymentsCoupon(ConsumerRegularPaymentsCouponDto regularPaymentsCouponDto) {
 
     String generatedCouponCode = generateCouponCode();
-    log.info("generatedCoupon: " + generatedCouponCode);
 
     Coupon issuedCoupon =
         couponRepository.save(
@@ -301,7 +304,6 @@ public class CouponService {
 
     couponReceiptRepository.save(
         couponMapper.toCouponReceiptEntity(issuedCoupon, regularPaymentsCouponDto.getConsumerId()));
-    return generatedCouponCode;
   }
 
   @Transactional
@@ -311,13 +313,18 @@ public class CouponService {
     foundPromotionCoupon.assignIssuedLimit(100L);
   }
 
+  /**
+   * 구독 전용 쿠폰 코드 생성
+   *
+   * @return {String} 발급된 쿠폰 코드
+   */
   public String generateCouponCode() {
 
     final int CODE_LEN = 14;
     SecureRandom random = new SecureRandom();
     StringBuilder builder = new StringBuilder(CODE_LEN);
 
-    final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    final String CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     for (int i = 0; i < CODE_LEN; i++) {
       int randomIdx = random.nextInt(CHARACTERS.length());
       char randomChar = CHARACTERS.charAt(randomIdx);
@@ -334,9 +341,9 @@ public class CouponService {
   /**
    * consumerId와 coupon으로 CouponReceipt(쿠폰 수령 내역) 찾기
    *
-   * @param consumerId
-   * @param foundCoupon
-   * @return CouponReceipt
+   * @param consumerId 로그인 한 소비자 식별자
+   * @param foundCoupon 쿠폰 수령 내역을 확인할 쿠폰 객체
+   * @return {CouponReceipt} 해당 쿠폰 수령 내역
    */
   public CouponReceipt getCouponReceipt(Long consumerId, Coupon foundCoupon) {
     return couponReceiptRepository
@@ -347,8 +354,8 @@ public class CouponService {
   /**
    * couponCode로 Coupon 찾기 (공통화)
    *
-   * @param couponCode
-   * @return Coupon
+   * @param couponCode 쿠폰 코드(식별자)
+   * @return {Coupon} 찾은 쿠폰 객체
    */
   public Coupon getCoupon(String couponCode) {
 
