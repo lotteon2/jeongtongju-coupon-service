@@ -1,10 +1,7 @@
 package com.jeontongju.coupon.kafka;
 
 import com.jeontongju.coupon.service.CouponService;
-import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
-import io.github.bitbox.bitbox.dto.OrderCancelDto;
-import io.github.bitbox.bitbox.dto.OrderInfoDto;
-import io.github.bitbox.bitbox.dto.ServerErrorForNotificationDto;
+import io.github.bitbox.bitbox.dto.*;
 import io.github.bitbox.bitbox.enums.NotificationTypeEnum;
 import io.github.bitbox.bitbox.enums.RecipientTypeEnum;
 import io.github.bitbox.bitbox.util.KafkaTopicNameInfo;
@@ -16,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class CouponConsumer {
+public class CouponKafkaListener {
 
   private final CouponService couponService;
   private final CouponProducer couponProducer;
@@ -82,6 +79,14 @@ public class CouponConsumer {
       log.error(
           "During Recover Order By Order Cancel Fail: Error while recovering coupon={}",
           e.getMessage());
+      couponProducer.send(
+          KafkaTopicNameInfo.SEND_ERROR_CANCELING_ORDER_NOTIFICATION,
+          ServerErrorCancelingOrderForNotificationDto.builder()
+              .recipientId(orderCancelDto.getConsumerId())
+              .recipientType(RecipientTypeEnum.ROLE_CONSUMER)
+              .notificationType(NotificationTypeEnum.INTERNAL_COUPON_SERVER_ERROR)
+              .orderCancelDto(orderCancelDto)
+              .build());
     }
   }
 
