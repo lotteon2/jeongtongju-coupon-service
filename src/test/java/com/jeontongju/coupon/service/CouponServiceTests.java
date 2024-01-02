@@ -1,9 +1,9 @@
-package com.jeontongju.coupon;
+package com.jeontongju.coupon.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.jeontongju.coupon.domain.Coupon;
-import com.jeontongju.coupon.service.CouponService;
+import com.jeontongju.coupon.facade.RedissonLockCouponFacade;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -11,19 +11,22 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
-class CouponApplicationTests {
+@Transactional
+public class CouponServiceTests {
 
   @Autowired private CouponService couponService;
+  @Autowired private RedissonLockCouponFacade redissonLockCouponFacade;
+
   final String PROMOTION_COUPON_CODE = "v5F5-4125-WXHz";
 
   @Test
-  @DisplayName("프로모션 쿠폰 수령 시, 동시에 요청이 들어오면 Race Condition 문제가 생긴다.")
+  @DisplayName("프로모션 쿠폰 수령 시, 동시성 문제를 해결할 수 있다")
   public void 동시_100개_요청() throws InterruptedException {
 
     int threadCount = 100;
-
     ExecutorService executorService = Executors.newFixedThreadPool(32);
 
     CountDownLatch latch = new CountDownLatch(threadCount);
@@ -32,7 +35,7 @@ class CouponApplicationTests {
       executorService.submit(
           () -> {
             try {
-                couponService.decreasePromotionCoupon(PROMOTION_COUPON_CODE, 1L);
+              redissonLockCouponFacade.decrease(PROMOTION_COUPON_CODE, 1L);
             } finally {
               latch.countDown();
             }
@@ -41,7 +44,7 @@ class CouponApplicationTests {
 
     latch.await();
 
-    Coupon foundCoupon = couponService.getCoupon(PROMOTION_COUPON_CODE);
-    assertThat(foundCoupon.getIssueLimit()).isNotEqualTo(0L);
+    Coupon coupon = couponService.getCoupon(PROMOTION_COUPON_CODE);
+    assertThat(coupon.getIssueLimit()).isEqualTo(0L);
   }
 }
