@@ -148,6 +148,20 @@ public class CouponService {
   }
 
   /**
+   * 주문 취소 실패 시, 쿠폰 사용 상태로 원상 복구
+   *
+   * @param orderCancelDto 주문 복구 정보
+   */
+  @Transactional
+  public void recoverCouponByFailedOrderCancel(OrderCancelDto orderCancelDto) {
+
+    Coupon foundCoupon = getCoupon(orderCancelDto.getCouponCode());
+    CouponReceipt foundCouponReceipt =
+        getCouponReceipt(orderCancelDto.getConsumerId(), foundCoupon);
+    foundCouponReceipt.deductCoupon();
+  }
+
+  /**
    * Promotion 쿠폰 수령을 위한 사전 체크
    *
    * @param consumerId 로그인 한 회원 식별자

@@ -67,6 +67,24 @@ public class CouponConsumer {
     }
   }
 
+  @KafkaListener(topics = KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_COUPON)
+  public void recoverCouponByFailedOrderCancel(OrderCancelDto orderCancelDto) {
+
+    try {
+      couponService.recoverCouponByFailedOrderCancel(orderCancelDto);
+
+      if (orderCancelDto.getPoint() == null) {
+        couponProducer.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER, orderCancelDto);
+      } else {
+        couponProducer.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_POINT, orderCancelDto);
+      }
+    } catch (Exception e) {
+      log.error(
+          "During Recover Order By Order Cancel Fail: Error while recovering coupon={}",
+          e.getMessage());
+    }
+  }
+
   @KafkaListener(topics = KafkaTopicNameInfo.ISSUE_REGULAR_PAYMENTS_COUPON)
   public void giveRegularPaymentsCoupon(ConsumerRegularPaymentsCouponDto regularPaymentsCouponDto) {
 
