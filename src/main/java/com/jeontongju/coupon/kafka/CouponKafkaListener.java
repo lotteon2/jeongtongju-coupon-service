@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 public class CouponKafkaListener {
 
   private final CouponService couponService;
-  private final CouponProducer couponProducer;
+  private final CouponKafkaProducer couponKafkaProducer;
 
   /**
    * 주문 시, 주문 및 결제 확정을 위한 쿠폰 사용 처리
@@ -29,12 +29,12 @@ public class CouponKafkaListener {
     try {
       couponService.deductCoupon(orderInfoDto);
       // 상품 서버로 재고 차감 요청
-      couponProducer.send(KafkaTopicNameInfo.REDUCE_STOCK, orderInfoDto);
+      couponKafkaProducer.send(KafkaTopicNameInfo.REDUCE_STOCK, orderInfoDto);
     } catch (Exception e) {
       log.error("During Order Process: Error while deduct coupon={}", e.getMessage());
       // 회원 서버로 포인트 환불 요청
-      couponProducer.send(KafkaTopicNameInfo.ADD_POINT, orderInfoDto);
-      couponProducer.send(
+      couponKafkaProducer.send(KafkaTopicNameInfo.ADD_POINT, orderInfoDto);
+      couponKafkaProducer.send(
           KafkaTopicNameInfo.SEND_ERROR_NOTIFICATION,
           ServerErrorForNotificationDto.builder()
               .recipientId(orderInfoDto.getUserCouponUpdateDto().getConsumerId())
@@ -56,7 +56,7 @@ public class CouponKafkaListener {
     try {
       couponService.rollbackCouponUsage(orderInfoDto);
       // 회원 서버로 포인트 환불 요청
-      couponProducer.send(KafkaTopicNameInfo.ADD_POINT, orderInfoDto);
+      couponKafkaProducer.send(KafkaTopicNameInfo.ADD_POINT, orderInfoDto);
     } catch (Exception e) {
       log.error("During Order-Rollback Process: Error while rollback coupon={}", e.getMessage());
     }
@@ -73,7 +73,7 @@ public class CouponKafkaListener {
     try {
       couponService.refundCouponByOrderCancel(orderCancelDto);
       // 재고 서버로 결제 취소 요청
-      couponProducer.send(KafkaTopicNameInfo.CANCEL_ORDER_STOCK, orderCancelDto);
+      couponKafkaProducer.send(KafkaTopicNameInfo.CANCEL_ORDER_PAYMENT, orderCancelDto);
     } catch (Exception e) {
       log.error("During Order Cancel Process: Error while refund coupon={}", e.getMessage());
     }
@@ -91,15 +91,15 @@ public class CouponKafkaListener {
       couponService.recoverCouponByFailedOrderCancel(orderCancelDto);
 
       if (orderCancelDto.getPoint() == null) {
-        couponProducer.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER, orderCancelDto);
+        couponKafkaProducer.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER, orderCancelDto);
       } else {
-        couponProducer.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_POINT, orderCancelDto);
+        couponKafkaProducer.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_POINT, orderCancelDto);
       }
     } catch (Exception e) {
       log.error(
           "During Recover Order By Order Cancel Fail: Error while recovering coupon={}",
           e.getMessage());
-      couponProducer.send(
+      couponKafkaProducer.send(
           KafkaTopicNameInfo.SEND_ERROR_CANCELING_ORDER_NOTIFICATION,
           MemberInfoForNotificationDto.builder()
               .recipientId(orderCancelDto.getConsumerId())
