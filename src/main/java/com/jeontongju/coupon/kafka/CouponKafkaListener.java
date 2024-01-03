@@ -18,6 +18,11 @@ public class CouponKafkaListener {
   private final CouponService couponService;
   private final CouponProducer couponProducer;
 
+  /**
+   * 주문 시, 주문 및 결제 확정을 위한 쿠폰 사용 처리
+   *
+   * @param orderInfoDto 주문 정보
+   */
   @KafkaListener(topics = KafkaTopicNameInfo.USE_COUPON)
   public void deductCoupon(OrderInfoDto orderInfoDto) {
 
@@ -40,6 +45,11 @@ public class CouponKafkaListener {
     }
   }
 
+  /**
+   * 주문 실패 시, 쿠폰 미사용 상태로 처리(복구)
+   *
+   * @param orderInfoDto 주문 복구 정보
+   */
   @KafkaListener(topics = KafkaTopicNameInfo.ROLLBACK_COUPON)
   public void rollbackCouponUsage(OrderInfoDto orderInfoDto) {
 
@@ -52,18 +62,28 @@ public class CouponKafkaListener {
     }
   }
 
+  /**
+   * 주문 취소 시, 해당 쿠폰 미사용 처리(환불)
+   *
+   * @param orderCancelDto 주문 취소 정보
+   */
   @KafkaListener(topics = KafkaTopicNameInfo.CANCEL_ORDER_COUPON)
   public void refundCouponByOrderCancel(OrderCancelDto orderCancelDto) {
 
     try {
       couponService.refundCouponByOrderCancel(orderCancelDto);
-      // 결제 서버로 결제 취소 요청
-      couponProducer.send(KafkaTopicNameInfo.CANCEL_ORDER_PAYMENT, orderCancelDto);
+      // 재고 서버로 결제 취소 요청
+      couponProducer.send(KafkaTopicNameInfo.CANCEL_ORDER_STOCK, orderCancelDto);
     } catch (Exception e) {
       log.error("During Order Cancel Process: Error while refund coupon={}", e.getMessage());
     }
   }
 
+  /**
+   * 주문 취소 실패 시, 쿠폰 사용 상태로 처리(복구)
+   *
+   * @param orderCancelDto 주문 복구 정보
+   */
   @KafkaListener(topics = KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_COUPON)
   public void recoverCouponByFailedOrderCancel(OrderCancelDto orderCancelDto) {
 
@@ -81,15 +101,19 @@ public class CouponKafkaListener {
           e.getMessage());
       couponProducer.send(
           KafkaTopicNameInfo.SEND_ERROR_CANCELING_ORDER_NOTIFICATION,
-          ServerErrorCancelingOrderForNotificationDto.builder()
+          MemberInfoForNotificationDto.builder()
               .recipientId(orderCancelDto.getConsumerId())
               .recipientType(RecipientTypeEnum.ROLE_CONSUMER)
               .notificationType(NotificationTypeEnum.INTERNAL_COUPON_SERVER_ERROR)
-              .orderCancelDto(orderCancelDto)
               .build());
     }
   }
 
+  /**
+   * 구독 결제 완료 후, 해당 소비자 구독 전용 쿠폰 자동 수령 처리
+   *
+   * @param regularPaymentsCouponDto 구독 결제 정보(소비자, 결제 완료 시각)
+   */
   @KafkaListener(topics = KafkaTopicNameInfo.ISSUE_REGULAR_PAYMENTS_COUPON)
   public void giveRegularPaymentsCoupon(ConsumerRegularPaymentsCouponDto regularPaymentsCouponDto) {
 

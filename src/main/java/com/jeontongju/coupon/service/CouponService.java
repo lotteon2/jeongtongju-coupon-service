@@ -43,7 +43,7 @@ public class CouponService {
   private static final String PROMOTION_COUPON_CODE = "v5F5-4125-WXHz";
 
   /**
-   * 주문 및 결제 확정을 위한 쿠폰 사용
+   * 주문 시, 주문 및 결제 확정을 위한 쿠폰 사용 처리
    *
    * @param orderInfoDto 주문 정보
    */
@@ -66,9 +66,9 @@ public class CouponService {
   }
 
   /**
-   * 주문 및 결제 로직에서 에러 발생 시, 쿠폰 사용 롤백
+   * 주문 실패 시, 쿠폰 미사용 상태로 처리(복구)
    *
-   * @param orderInfoDto 롤백할 주문 정보
+   * @param orderInfoDto 주문 복구 정보
    */
   @Transactional
   public void rollbackCouponUsage(OrderInfoDto orderInfoDto) {
@@ -134,7 +134,7 @@ public class CouponService {
   }
 
   /**
-   * 주문 취소 시, 해당 쿠폰 미사용 처리
+   * 주문 취소 시, 해당 쿠폰 미사용 처리(환불)
    *
    * @param orderCancelDto 주문 취소 정보
    */
@@ -148,7 +148,7 @@ public class CouponService {
   }
 
   /**
-   * 주문 취소 실패 시, 쿠폰 사용 상태로 원상 복구
+   * 주문 취소 실패 시, 쿠폰 사용 상태로 처리(복구)
    *
    * @param orderCancelDto 주문 복구 정보
    */
@@ -320,6 +320,7 @@ public class CouponService {
         couponMapper.toCouponReceiptEntity(issuedCoupon, regularPaymentsCouponDto.getConsumerId()));
   }
 
+  /** 프로모션 쿠폰 발급 (100개) */
   @Transactional
   public void issuePromotionCoupons() {
 
