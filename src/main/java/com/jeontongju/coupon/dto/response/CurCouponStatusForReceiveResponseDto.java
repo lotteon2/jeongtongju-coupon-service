@@ -13,4 +13,5 @@ public class CurCouponStatusForReceiveResponseDto {
 
   private Boolean isSoldOut;
   private Boolean isOpen;
+  private Boolean isDuplicated;
 }

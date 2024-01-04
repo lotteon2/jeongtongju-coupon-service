@@ -167,7 +167,7 @@ public class CouponService {
    * @param consumerId 로그인 한 회원 식별자
    */
   public void preCheck(Long consumerId)
-      throws NotOpenPromotionCouponEventException, AlreadyReceiveCouponException {
+      throws NotOpenPromotionCouponEventException, AlreadyReceivePromotionCouponException {
 
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime after5PM =
@@ -183,8 +183,10 @@ public class CouponService {
 
     Optional<CouponReceipt> foundCouponReceipt =
         couponReceiptRepository.findByCouponReceiptId(consumerId, foundCoupon);
+    
+    // 이미 수령한 회원, 중복 수령 방지
     if (foundCouponReceipt.isPresent()) {
-      throw new AlreadyReceiveCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
+      throw new AlreadyReceivePromotionCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
     }
   }
 
