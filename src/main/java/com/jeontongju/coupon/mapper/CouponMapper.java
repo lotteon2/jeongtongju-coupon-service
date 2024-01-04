@@ -59,11 +59,12 @@ public class CouponMapper {
   }
 
   public CurCouponStatusForReceiveResponseDto toCurCouponStatusDto(
-      boolean isSoldOut, boolean isOpen) {
+      boolean isSoldOut, boolean isOpen, boolean isDuplicated) {
 
     return CurCouponStatusForReceiveResponseDto.builder()
         .isSoldOut(isSoldOut)
         .isOpen(isOpen)
+        .isDuplicated(isDuplicated)
         .build();
   }
 }
