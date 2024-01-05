@@ -41,11 +41,11 @@ public class CouponRestControllerAdvice {
   public ResponseEntity<ResponseFormat<CurCouponStatusForReceiveResponseDto>>
       handleNotOpenPromotionCouponEvent() {
 
-    HttpStatus status = HttpStatus.BAD_REQUEST;
+    HttpStatus status = HttpStatus.OK;
     return ResponseEntity.status(status)
         .body(
             ResponseFormat.<CurCouponStatusForReceiveResponseDto>builder()
-                .code(HttpStatus.BAD_REQUEST.value())
+                .code(status.value())
                 .data(couponMapper.toCurCouponStatusDto(false, false, false))
                 .build());
   }
@@ -54,11 +54,11 @@ public class CouponRestControllerAdvice {
   public ResponseEntity<ResponseFormat<CurCouponStatusForReceiveResponseDto>>
       handleCouponExhausted() {
 
-    HttpStatus status = HttpStatus.BAD_REQUEST;
+    HttpStatus status = HttpStatus.OK;
     return ResponseEntity.status(status)
         .body(
             ResponseFormat.<CurCouponStatusForReceiveResponseDto>builder()
-                .code(HttpStatus.BAD_REQUEST.value())
+                .code(status.value())
                 .data(couponMapper.toCurCouponStatusDto(true, true, false))
                 .build());
   }
@@ -67,7 +67,7 @@ public class CouponRestControllerAdvice {
   public ResponseEntity<ResponseFormat<CurCouponStatusForReceiveResponseDto>>
       handleAlreadyReceivePromotionCoupon() {
 
-    HttpStatus status = HttpStatus.BAD_REQUEST;
+    HttpStatus status = HttpStatus.OK;
     return ResponseEntity.status(status)
         .body(
             ResponseFormat.<CurCouponStatusForReceiveResponseDto>builder()
