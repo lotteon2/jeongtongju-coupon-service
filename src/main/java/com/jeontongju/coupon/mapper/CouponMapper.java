@@ -6,6 +6,7 @@ import com.jeontongju.coupon.domain.CouponReceiptId;
 import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsResponseDto;
 import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
 import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
+import io.github.bitbox.bitbox.dto.SubscriptionCouponBenefitForInquiryResponseDto;
 import io.github.bitbox.bitbox.enums.CouponTypeEnum;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -66,5 +67,11 @@ public class CouponMapper {
         .isOpen(isOpen)
         .isDuplicated(isDuplicated)
         .build();
+  }
+
+  public SubscriptionCouponBenefitForInquiryResponseDto toSubscriptionCouponBenefitDto(
+      long couponUse) {
+
+    return SubscriptionCouponBenefitForInquiryResponseDto.builder().couponUse(couponUse).build();
   }
 }
