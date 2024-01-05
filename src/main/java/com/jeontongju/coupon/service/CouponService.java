@@ -11,10 +11,8 @@ import com.jeontongju.coupon.repository.CouponReceiptRepository;
 import com.jeontongju.coupon.repository.CouponRepository;
 import com.jeontongju.coupon.utils.CustomErrMessage;
 import com.jeontongju.coupon.utils.PaginationManager;
-import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
-import io.github.bitbox.bitbox.dto.OrderCancelDto;
-import io.github.bitbox.bitbox.dto.OrderInfoDto;
-import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
+import io.github.bitbox.bitbox.dto.*;
+
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -353,6 +351,25 @@ public class CouponService {
     }
 
     return builder.toString();
+  }
+
+  /**
+   * 멤버십 구독 쿠폰 사용 총액(혜택) 조회
+   *
+   * @param consumerId 멤버십 구독한 회원 식별자
+   * @return {SubscriptionCouponBenefitForInquiryResponseDto} 멤버십 쿠폰 사용 총액(혜택)
+   */
+  public SubscriptionCouponBenefitForInquiryResponseDto getSubscriptionBenefit(Long consumerId) {
+
+    long couponUse = 0;
+    List<CouponReceipt> couponReceipts = couponReceiptRepository.findByConsumerId(consumerId);
+    for(CouponReceipt couponReceipt : couponReceipts) {
+      if(couponReceipt.getIsUse()) {
+        Coupon foundCoupon = getCoupon(couponReceipt.getId().getCoupon().getCouponCode());
+        couponUse += foundCoupon.getDiscountAmount();
+      }
+    }
+    return couponMapper.toSubscriptionCouponBenefitDto(couponUse);
   }
 
   /**
