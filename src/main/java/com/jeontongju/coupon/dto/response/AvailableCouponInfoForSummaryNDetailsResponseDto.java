@@ -13,7 +13,6 @@ import java.util.List;
 @Getter
 public class AvailableCouponInfoForSummaryNDetailsResponseDto {
 
-  private int totalCount;
   private int availableCount;
   private List<CouponInfoForSingleInquiryResponseDto> coupons;
 }

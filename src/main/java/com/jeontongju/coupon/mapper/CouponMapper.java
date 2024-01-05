@@ -48,12 +48,9 @@ public class CouponMapper {
   }
 
   public AvailableCouponInfoForSummaryNDetailsResponseDto toSummaryNDetailsDto(
-      int totalValidCounts,
-      int availableCount,
-      List<CouponInfoForSingleInquiryResponseDto> availableCouponList) {
+      int availableCount, List<CouponInfoForSingleInquiryResponseDto> availableCouponList) {
 
     return AvailableCouponInfoForSummaryNDetailsResponseDto.builder()
-        .totalCount(totalValidCounts)
         .availableCount(availableCount)
         .coupons(availableCouponList)
         .build();
