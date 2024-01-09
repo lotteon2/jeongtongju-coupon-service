@@ -47,4 +47,8 @@ public class Coupon {
   public void assignIssuedLimit(Long issueLimit) {
     this.issueLimit = issueLimit;
   }
+
+  public void assignCouponCode(String couponCode) {
+    this.couponCode = couponCode;
+  }
 }

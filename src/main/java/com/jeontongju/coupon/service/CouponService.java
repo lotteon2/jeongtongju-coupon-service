@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import io.github.bitbox.bitbox.enums.CouponTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,8 +39,6 @@ public class CouponService {
   private final CouponReceiptRepository couponReceiptRepository;
   private final CouponMapper couponMapper;
   private final PaginationManager<CouponInfoForSingleInquiryResponseDto> paginationManager;
-
-  private static final String PROMOTION_COUPON_CODE = "v5F5-4125-WXHz";
 
   /**
    * 주문 시, 주문 및 결제 확정을 위한 쿠폰 사용 처리
@@ -171,16 +171,23 @@ public class CouponService {
     LocalDateTime after5PM =
         LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 17, 0);
 
-    // test를 위해 주석 처리
     if (now.isBefore(after5PM)) {
       throw new NotOpenPromotionCouponEventException(
           CustomErrMessage.NOT_OPEN_PROMOTION_COUPON_EVENT);
     }
 
-    Coupon foundCoupon = getCoupon(PROMOTION_COUPON_CODE);
+    LocalDateTime after6PM =
+        LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 18, 0);
+
+    if (now.isAfter(after6PM)) {
+      throw new NotOpenPromotionCouponEventException(
+          CustomErrMessage.NOT_OPEN_PROMOTION_COUPON_EVENT);
+    }
+
+    Coupon promotionCoupon = getPromotionCoupon();
 
     Optional<CouponReceipt> foundCouponReceipt =
-        couponReceiptRepository.findByCouponReceiptId(consumerId, foundCoupon);
+        couponReceiptRepository.findByCouponReceiptId(consumerId, promotionCoupon);
 
     // 이미 수령한 회원, 중복 수령 방지
     if (foundCouponReceipt.isPresent()) {
@@ -324,7 +331,9 @@ public class CouponService {
   @Transactional
   public void issuePromotionCoupons() {
 
-    Coupon foundPromotionCoupon = getCoupon(PROMOTION_COUPON_CODE);
+    Coupon foundPromotionCoupon = getPromotionCoupon();
+
+    foundPromotionCoupon.assignCouponCode(generateCouponCode());
     foundPromotionCoupon.assignIssuedLimit(100L);
   }
 
@@ -383,6 +392,18 @@ public class CouponService {
     return couponReceiptRepository
         .findByCouponReceiptId(consumerId, foundCoupon)
         .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON_RECEIPT));
+  }
+
+  /**
+   * Promotion Coupon 찾기(공통화)
+   *
+   * @return {Coupon} 찾은 프로모션 쿠폰 객체
+   */
+  private Coupon getPromotionCoupon() {
+
+    return couponRepository
+        .findByCouponName(CouponTypeEnum.PROMOTION)
+        .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
   }
 
   /**
