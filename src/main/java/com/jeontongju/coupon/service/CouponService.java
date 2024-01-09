@@ -11,10 +11,8 @@ import com.jeontongju.coupon.repository.CouponReceiptRepository;
 import com.jeontongju.coupon.repository.CouponRepository;
 import com.jeontongju.coupon.utils.CustomErrMessage;
 import com.jeontongju.coupon.utils.PaginationManager;
-import io.github.bitbox.bitbox.dto.ConsumerRegularPaymentsCouponDto;
-import io.github.bitbox.bitbox.dto.OrderCancelDto;
-import io.github.bitbox.bitbox.dto.OrderInfoDto;
-import io.github.bitbox.bitbox.dto.UserCouponUpdateDto;
+import io.github.bitbox.bitbox.dto.*;
+
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -43,7 +41,7 @@ public class CouponService {
   private static final String PROMOTION_COUPON_CODE = "v5F5-4125-WXHz";
 
   /**
-   * 주문 및 결제 확정을 위한 쿠폰 사용
+   * 주문 시, 주문 및 결제 확정을 위한 쿠폰 사용 처리
    *
    * @param orderInfoDto 주문 정보
    */
@@ -66,9 +64,9 @@ public class CouponService {
   }
 
   /**
-   * 주문 및 결제 로직에서 에러 발생 시, 쿠폰 사용 롤백
+   * 주문 실패 시, 쿠폰 미사용 상태로 처리(복구)
    *
-   * @param orderInfoDto 롤백할 주문 정보
+   * @param orderInfoDto 주문 복구 정보
    */
   @Transactional
   public void rollbackCouponUsage(OrderInfoDto orderInfoDto) {
@@ -134,7 +132,7 @@ public class CouponService {
   }
 
   /**
-   * 주문 취소 시, 해당 쿠폰 미사용 처리
+   * 주문 취소 시, 해당 쿠폰 미사용 처리(환불)
    *
    * @param orderCancelDto 주문 취소 정보
    */
@@ -148,12 +146,26 @@ public class CouponService {
   }
 
   /**
+   * 주문 취소 실패 시, 쿠폰 사용 상태로 처리(복구)
+   *
+   * @param orderCancelDto 주문 복구 정보
+   */
+  @Transactional
+  public void recoverCouponByFailedOrderCancel(OrderCancelDto orderCancelDto) {
+
+    Coupon foundCoupon = getCoupon(orderCancelDto.getCouponCode());
+    CouponReceipt foundCouponReceipt =
+        getCouponReceipt(orderCancelDto.getConsumerId(), foundCoupon);
+    foundCouponReceipt.deductCoupon();
+  }
+
+  /**
    * Promotion 쿠폰 수령을 위한 사전 체크
    *
    * @param consumerId 로그인 한 회원 식별자
    */
   public void preCheck(Long consumerId)
-      throws NotOpenPromotionCouponEventException, AlreadyReceiveCouponException {
+      throws NotOpenPromotionCouponEventException, AlreadyReceivePromotionCouponException {
 
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime after5PM =
@@ -169,8 +181,10 @@ public class CouponService {
 
     Optional<CouponReceipt> foundCouponReceipt =
         couponReceiptRepository.findByCouponReceiptId(consumerId, foundCoupon);
+
+    // 이미 수령한 회원, 중복 수령 방지
     if (foundCouponReceipt.isPresent()) {
-      throw new AlreadyReceiveCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
+      throw new AlreadyReceivePromotionCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
     }
   }
 
@@ -284,7 +298,7 @@ public class CouponService {
     }
 
     return couponMapper.toSummaryNDetailsDto(
-        totalValidCounts, (totalValidCounts - unavailableCounts), availableCouponList);
+        (totalValidCounts - unavailableCounts), availableCouponList);
   }
 
   /**
@@ -306,6 +320,7 @@ public class CouponService {
         couponMapper.toCouponReceiptEntity(issuedCoupon, regularPaymentsCouponDto.getConsumerId()));
   }
 
+  /** 프로모션 쿠폰 발급 (100개) */
   @Transactional
   public void issuePromotionCoupons() {
 
@@ -336,6 +351,25 @@ public class CouponService {
     }
 
     return builder.toString();
+  }
+
+  /**
+   * 멤버십 구독 쿠폰 사용 총액(혜택) 조회
+   *
+   * @param consumerId 멤버십 구독한 회원 식별자
+   * @return {SubscriptionCouponBenefitForInquiryResponseDto} 멤버십 쿠폰 사용 총액(혜택)
+   */
+  public SubscriptionCouponBenefitForInquiryResponseDto getSubscriptionBenefit(Long consumerId) {
+
+    long couponUse = 0;
+    List<CouponReceipt> couponReceipts = couponReceiptRepository.findByConsumerId(consumerId);
+    for (CouponReceipt couponReceipt : couponReceipts) {
+      if (couponReceipt.getIsUse()) {
+        Coupon foundCoupon = getCoupon(couponReceipt.getId().getCoupon().getCouponCode());
+        couponUse += foundCoupon.getDiscountAmount();
+      }
+    }
+    return couponMapper.toSubscriptionCouponBenefitDto(couponUse);
   }
 
   /**

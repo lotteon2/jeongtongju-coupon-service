@@ -58,7 +58,7 @@ public class CouponRestController {
                 .build());
   }
 
-  @GetMapping("/consumers/coupons-count")
+  @PostMapping("/consumers/coupons-count")
   public ResponseEntity<ResponseFormat<AvailableCouponInfoForSummaryNDetailsResponseDto>>
       getAvailableCouponsWhenOrdering(
           @RequestHeader Long memberId,
