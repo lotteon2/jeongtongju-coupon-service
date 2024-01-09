@@ -20,11 +20,10 @@ public class CouponRestControllerAdvice {
   @ExceptionHandler(CouponNotFoundException.class)
   public ResponseEntity<ResponseFormat<Void>> handleNotFoundCoupon() {
 
-    HttpStatus status = HttpStatus.OK;
-    return ResponseEntity.status(status)
+    return ResponseEntity.ok()
         .body(
             ResponseFormat.<Void>builder()
-                .code(status.value())
+                .code(HttpStatus.OK.value())
                 .failure(FailureTypeEnum.NOT_FOUND_COUPON)
                 .build());
   }
@@ -41,11 +40,10 @@ public class CouponRestControllerAdvice {
   public ResponseEntity<ResponseFormat<CurCouponStatusForReceiveResponseDto>>
       handleNotOpenPromotionCouponEvent() {
 
-    HttpStatus status = HttpStatus.OK;
-    return ResponseEntity.status(status)
+    return ResponseEntity.ok()
         .body(
             ResponseFormat.<CurCouponStatusForReceiveResponseDto>builder()
-                .code(status.value())
+                .code(HttpStatus.OK.value())
                 .data(couponMapper.toCurCouponStatusDto(false, false, false))
                 .build());
   }
@@ -54,11 +52,10 @@ public class CouponRestControllerAdvice {
   public ResponseEntity<ResponseFormat<CurCouponStatusForReceiveResponseDto>>
       handleCouponExhausted() {
 
-    HttpStatus status = HttpStatus.OK;
-    return ResponseEntity.status(status)
+    return ResponseEntity.ok()
         .body(
             ResponseFormat.<CurCouponStatusForReceiveResponseDto>builder()
-                .code(status.value())
+                .code(HttpStatus.OK.value())
                 .data(couponMapper.toCurCouponStatusDto(true, true, false))
                 .build());
   }
@@ -67,11 +64,10 @@ public class CouponRestControllerAdvice {
   public ResponseEntity<ResponseFormat<CurCouponStatusForReceiveResponseDto>>
       handleAlreadyReceivePromotionCoupon() {
 
-    HttpStatus status = HttpStatus.OK;
-    return ResponseEntity.status(status)
+    return ResponseEntity.ok()
         .body(
             ResponseFormat.<CurCouponStatusForReceiveResponseDto>builder()
-                .code(status.value())
+                .code(HttpStatus.OK.value())
                 .data(couponMapper.toCurCouponStatusDto(false, true, true))
                 .build());
   }
