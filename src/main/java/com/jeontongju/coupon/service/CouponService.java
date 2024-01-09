@@ -167,22 +167,23 @@ public class CouponService {
   public void preCheck(Long consumerId)
       throws NotOpenPromotionCouponEventException, AlreadyReceivePromotionCouponException {
 
-    LocalDateTime now = LocalDateTime.now();
-    LocalDateTime after5PM =
-        LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 17, 0);
-
-    if (now.isBefore(after5PM)) {
-      throw new NotOpenPromotionCouponEventException(
-          CustomErrMessage.NOT_OPEN_PROMOTION_COUPON_EVENT);
-    }
-
-    LocalDateTime after6PM =
-        LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 18, 0);
-
-    if (now.isAfter(after6PM)) {
-      throw new NotOpenPromotionCouponEventException(
-          CustomErrMessage.NOT_OPEN_PROMOTION_COUPON_EVENT);
-    }
+    //    test를 위해 잠시 주석처리
+    //    LocalDateTime now = LocalDateTime.now();
+    //    LocalDateTime after5PM =
+    //        LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 17, 0);
+    //
+    //    if (now.isBefore(after5PM)) {
+    //      throw new NotOpenPromotionCouponEventException(
+    //          CustomErrMessage.NOT_OPEN_PROMOTION_COUPON_EVENT);
+    //    }
+    //
+    //    LocalDateTime after6PM =
+    //        LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), 18, 0);
+    //
+    //    if (now.isAfter(after6PM)) {
+    //      throw new NotOpenPromotionCouponEventException(
+    //          CustomErrMessage.NOT_OPEN_PROMOTION_COUPON_EVENT);
+    //    }
 
     Coupon promotionCoupon = getPromotionCoupon();
 
