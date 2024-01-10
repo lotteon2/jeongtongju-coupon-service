@@ -54,9 +54,13 @@ public class CouponKafkaListener {
   public void rollbackCouponUsage(OrderInfoDto orderInfoDto) {
 
     try {
+
       couponService.rollbackCouponUsage(orderInfoDto);
-      // 회원 서버로 포인트 환불 요청
-      couponKafkaProducer.send(KafkaTopicNameInfo.ADD_POINT, orderInfoDto);
+
+      if (orderInfoDto.getUserPointUpdateDto().getPoint() > 0) {
+        // 회원 서버로 포인트 환불 요청
+        couponKafkaProducer.send(KafkaTopicNameInfo.ADD_POINT, orderInfoDto);
+      }
     } catch (Exception e) {
       log.error("During Order-Rollback Process: Error while rollback coupon={}", e.getMessage());
     }
@@ -90,7 +94,7 @@ public class CouponKafkaListener {
     try {
       couponService.recoverCouponByFailedOrderCancel(orderCancelDto);
 
-      if (orderCancelDto.getPoint() == null) {
+      if (orderCancelDto.getPoint() <= 0) {
         couponKafkaProducer.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER, orderCancelDto);
       } else {
         couponKafkaProducer.send(KafkaTopicNameInfo.RECOVER_CANCEL_ORDER_POINT, orderCancelDto);
