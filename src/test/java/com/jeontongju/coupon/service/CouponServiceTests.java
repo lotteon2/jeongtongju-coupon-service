@@ -35,7 +35,7 @@ public class CouponServiceTests {
       executorService.submit(
           () -> {
             try {
-              redissonLockCouponFacade.decrease(PROMOTION_COUPON_CODE, 1L);
+              redissonLockCouponFacade.decrease(1L);
             } finally {
               latch.countDown();
             }
