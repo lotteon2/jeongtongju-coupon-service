@@ -1,5 +1,6 @@
 package com.jeontongju.coupon.facade;
 
+import com.jeontongju.coupon.domain.Coupon;
 import com.jeontongju.coupon.service.CouponService;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -16,22 +17,27 @@ public class RedissonLockCouponFacade {
   private final RedissonClient redissonClient;
   private final CouponService couponService;
 
-  public void decrease(String id, Long quantity) {
+  public void decrease(Long quantity) {
 
+    Coupon promotionCoupon = couponService.getPromotionCoupon();
+    String id = promotionCoupon.getCouponCode();
     RLock lock = redissonClient.getLock(id);
     try {
-      boolean available = lock.tryLock(10, 1, TimeUnit.SECONDS);
+      boolean available = lock.tryLock(15, 10, TimeUnit.SECONDS);
 
       if (!available) {
         log.info("lock 획득 실패");
         return;
       }
+
       couponService.decreasePromotionCoupon(id, quantity);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } finally {
       log.info("finally executes..");
-      lock.unlock();
+      if (lock.isLocked() && lock.isHeldByCurrentThread()) {
+        lock.unlock();
+      }
     }
   }
 }
