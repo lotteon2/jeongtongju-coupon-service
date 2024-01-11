@@ -12,15 +12,13 @@ import com.jeontongju.coupon.repository.CouponRepository;
 import com.jeontongju.coupon.utils.CustomErrMessage;
 import com.jeontongju.coupon.utils.PaginationManager;
 import io.github.bitbox.bitbox.dto.*;
-
+import io.github.bitbox.bitbox.enums.CouponTypeEnum;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import io.github.bitbox.bitbox.enums.CouponTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -31,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
+// @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CouponService {
 
@@ -39,6 +37,20 @@ public class CouponService {
   private final CouponReceiptRepository couponReceiptRepository;
   private final CouponMapper couponMapper;
   private final PaginationManager<CouponInfoForSingleInquiryResponseDto> paginationManager;
+
+  /**
+   * 회원 가입시 WELCOME 쿠폰 발급 및 수령 처리
+   *
+   * @param consumerId 회원 가입한 소비자 식별자
+   */
+  @Transactional
+  public void issueWelcomeCouponByJoin(Long consumerId) {
+
+    String couponCode = generateCouponCode();
+    Coupon issuedCoupon =
+        couponRepository.save(couponMapper.toWelcomeCouponEntity(couponCode, LocalDateTime.now()));
+    couponReceiptRepository.save(couponMapper.toCouponReceiptEntity(issuedCoupon, consumerId));
+  }
 
   /**
    * 주문 시, 주문 및 결제 확정을 위한 쿠폰 사용 처리
@@ -205,15 +217,8 @@ public class CouponService {
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void decreasePromotionCoupon(String couponCode, Long quantity) {
 
-    Coupon foundCoupon =
-        couponRepository
-            .findByCouponCode(couponCode)
-            .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
+    Coupon foundCoupon = couponRepository.findByCouponCode(couponCode).orElseThrow();
 
-    if (foundCoupon.getIssueLimit() <= 0L) {
-      //      return;
-      throw new CouponExhaustedException(CustomErrMessage.EXHAUSTED_COUPON);
-    }
     foundCoupon.decrease(quantity);
     couponRepository.saveAndFlush(foundCoupon);
   }
@@ -221,16 +226,24 @@ public class CouponService {
   /**
    * 쿠폰 수령 후, 수령 내역 저장
    *
-   * @param couponCode 수령한 쿠폰 코드(식별자)
    * @param consumerId 로그인 한 회원 식별자
    */
   @Transactional
-  public void AfterProcessing(String couponCode, Long consumerId) {
+  public void AfterProcessing(Long consumerId) {
 
-    Coupon foundCoupon = getCoupon(couponCode);
+    Coupon foundCoupon = getPromotionCoupon();
     couponReceiptRepository.save(couponMapper.toCouponReceiptEntity(foundCoupon, consumerId));
   }
 
+  /**
+   * 쿠폰 목록 조회
+   *
+   * @param consumerId 로그인 한 회원 식별자
+   * @param page 페이징 첫 페이지 번호
+   * @param size 페이지 당 보여줄 게시물 개수
+   * @param search 필터링 기준
+   * @return {Page<CouponInfoForSingleInquiryResponseDto>} 한 페이지 만큼의 쿠폰 목록 정보
+   */
   public Page<CouponInfoForSingleInquiryResponseDto> getMyCouponsForListLookup(
       Long consumerId, int page, int size, String search) {
 
@@ -400,7 +413,7 @@ public class CouponService {
    *
    * @return {Coupon} 찾은 프로모션 쿠폰 객체
    */
-  private Coupon getPromotionCoupon() {
+  public Coupon getPromotionCoupon() {
 
     return couponRepository
         .findByCouponName(CouponTypeEnum.PROMOTION)

@@ -15,6 +15,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class CouponMapper {
 
+  public Coupon toWelcomeCouponEntity(String couponCode, LocalDateTime issuedAt) {
+
+    LocalDateTime expiredAt = issuedAt.plusMonths(issuedAt.getMonth().getValue());
+
+    return Coupon.builder()
+        .couponCode(couponCode)
+        .couponName(CouponTypeEnum.WELCOME)
+        .discountAmount(1000L)
+        .issueLimit(1L)
+        .issuedAt(issuedAt)
+        .expiredAt(expiredAt)
+        .minOrderPrice(10000L)
+        .build();
+  }
+
   public Coupon toRegularPaymentsCouponEntity(String couponCode, LocalDateTime issuedAt) {
 
     LocalDateTime expiredAt = issuedAt.plusYears(1);

@@ -1,9 +1,8 @@
 package com.jeontongju.coupon.domain;
 
+import io.github.bitbox.bitbox.enums.CouponTypeEnum;
 import java.time.LocalDateTime;
 import javax.persistence.*;
-
-import io.github.bitbox.bitbox.enums.CouponTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -41,6 +40,10 @@ public class Coupon {
   private Long minOrderPrice;
 
   public void decrease(Long quantity) {
+
+    if (this.issueLimit - quantity < 0L) {
+      throw new RuntimeException();
+    }
     this.issueLimit -= quantity;
   }
 
