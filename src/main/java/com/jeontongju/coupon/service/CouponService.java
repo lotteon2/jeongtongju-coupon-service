@@ -330,15 +330,29 @@ public class CouponService {
   @Transactional
   public void giveRegularPaymentsCoupon(ConsumerRegularPaymentsCouponDto regularPaymentsCouponDto) {
 
-    String generatedCouponCode = generateCouponCode();
+    String generatedCouponCode;
+    for (int i = 0; i < 5; i++) {
+      generatedCouponCode = generateCouponCode();
 
-    Coupon issuedCoupon =
+      Coupon issued1000Coupon =
+          couponRepository.save(
+              couponMapper.toRegularPaymentsCouponEntity(
+                  generatedCouponCode, 1000L, 10000L, regularPaymentsCouponDto.getSuccessedAt()));
+
+      couponReceiptRepository.save(
+          couponMapper.toCouponReceiptEntity(
+              issued1000Coupon, regularPaymentsCouponDto.getConsumerId()));
+    }
+
+    generatedCouponCode = generateCouponCode();
+    Coupon issued5000Coupon =
         couponRepository.save(
             couponMapper.toRegularPaymentsCouponEntity(
-                generatedCouponCode, regularPaymentsCouponDto.getSuccessedAt()));
+                generatedCouponCode, 5000L, 20000L, regularPaymentsCouponDto.getSuccessedAt()));
 
     couponReceiptRepository.save(
-        couponMapper.toCouponReceiptEntity(issuedCoupon, regularPaymentsCouponDto.getConsumerId()));
+            couponMapper.toCouponReceiptEntity(
+                    issued5000Coupon, regularPaymentsCouponDto.getConsumerId()));
   }
 
   /** 프로모션 쿠폰 발급 (100개) */

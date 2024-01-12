@@ -30,18 +30,18 @@ public class CouponMapper {
         .build();
   }
 
-  public Coupon toRegularPaymentsCouponEntity(String couponCode, LocalDateTime issuedAt) {
+  public Coupon toRegularPaymentsCouponEntity(String couponCode, Long discountAmount, Long minOrderPrice, LocalDateTime issuedAt) {
 
     LocalDateTime expiredAt = issuedAt.plusYears(1);
 
     return Coupon.builder()
         .couponCode(couponCode)
         .couponName(CouponTypeEnum.YANGBAN)
-        .discountAmount(3000L)
+        .discountAmount(discountAmount)
         .issueLimit(1L)
         .issuedAt(issuedAt)
         .expiredAt(expiredAt)
-        .minOrderPrice(15000L)
+        .minOrderPrice(minOrderPrice)
         .build();
   }
 
