@@ -106,7 +106,6 @@ public class CouponService {
     CouponReceipt foundCouponReceipt =
         getCouponReceipt(userCouponUpdateDto.getConsumerId(), foundCoupon);
 
-    log.info("foundCouponReceipt: " + foundCouponReceipt.getId().getCoupon().getCouponCode());
     if (foundCouponReceipt.getIsUse()) {
       log.error("이미 사용한 쿠폰");
       throw new AlreadyUseCouponException(CustomErrMessage.ALREADY_USE_COUPON);
@@ -176,7 +175,7 @@ public class CouponService {
    *
    * @param consumerId 로그인 한 회원 식별자
    */
-  public void preCheck(Long consumerId)
+  public Boolean prevCheck(Long consumerId)
       throws NotOpenPromotionCouponEventException, AlreadyReceivePromotionCouponException {
 
     //    test를 위해 잠시 주석처리
@@ -204,8 +203,11 @@ public class CouponService {
 
     // 이미 수령한 회원, 중복 수령 방지
     if (foundCouponReceipt.isPresent()) {
-      throw new AlreadyReceivePromotionCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
+//      throw new AlreadyReceivePromotionCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
+      return false;
     }
+
+    return true;
   }
 
   /**
@@ -215,12 +217,15 @@ public class CouponService {
    * @param quantity 차감할 쿠폰 수량
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void decreasePromotionCoupon(String couponCode, Long quantity) {
+  public void decreasePromotionCoupon(String couponCode, Long quantity, Long consumerId) {
 
     Coupon foundCoupon = couponRepository.findByCouponCode(couponCode).orElseThrow();
 
     foundCoupon.decrease(quantity);
     couponRepository.saveAndFlush(foundCoupon);
+
+    couponReceiptRepository.saveAndFlush(
+        couponMapper.toCouponReceiptEntity(foundCoupon, consumerId));
   }
 
   /**
@@ -306,18 +311,19 @@ public class CouponService {
     for (CouponReceipt couponReceipt : foundCouponReceipts) {
       Coupon foundCoupon = couponReceipt.getId().getCoupon();
       if (!isValidCoupon(foundCoupon.getExpiredAt())) {
+
         totalValidCounts -= 1;
         continue;
       }
 
       if (checkValidRequestDto.getTotalAmount() < foundCoupon.getMinOrderPrice()) {
+
         unavailableCounts += 1;
         continue;
       }
 
       availableCouponList.add(couponMapper.toInquiryDto(foundCoupon));
     }
-
     return couponMapper.toSummaryNDetailsDto(
         (totalValidCounts - unavailableCounts), availableCouponList);
   }
@@ -399,6 +405,7 @@ public class CouponService {
     List<CouponReceipt> couponReceipts = couponReceiptRepository.findByConsumerId(consumerId);
     for (CouponReceipt couponReceipt : couponReceipts) {
       if (couponReceipt.getIsUse()) {
+
         Coupon foundCoupon = getCoupon(couponReceipt.getId().getCoupon().getCouponCode());
         couponUse += foundCoupon.getDiscountAmount();
       }

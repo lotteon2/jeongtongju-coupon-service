@@ -1,8 +1,6 @@
 package com.jeontongju.coupon.kafka;
 
-import com.jeontongju.coupon.domain.Coupon;
-import com.jeontongju.coupon.mapper.CouponMapper;
-import com.jeontongju.coupon.repository.CouponReceiptRepository;
+import com.jeontongju.coupon.facade.RedissonLockCouponFacade;
 import com.jeontongju.coupon.service.CouponService;
 import io.github.bitbox.bitbox.dto.*;
 import io.github.bitbox.bitbox.enums.NotificationTypeEnum;
@@ -19,9 +17,8 @@ import org.springframework.stereotype.Component;
 public class CouponKafkaListener {
 
   private final CouponService couponService;
-  private final CouponReceiptRepository couponReceiptRepository;
   private final CouponKafkaProducer couponKafkaProducer;
-  private final CouponMapper couponMapper;
+  private final RedissonLockCouponFacade redissonLockCouponFacade;
 
   @KafkaListener(topics = "issue-welcome-coupon")
   public void issueWelcomeCoupon(Long consumerId) {
@@ -147,9 +144,6 @@ public class CouponKafkaListener {
   @KafkaListener(topics = "coupon-receipt")
   public void listener(Long consumerId) {
 
-    Coupon foundPromotionCoupon = couponService.getPromotionCoupon();
-    couponService.decreasePromotionCoupon(foundPromotionCoupon.getCouponCode(), 1L);
-    couponReceiptRepository.save(
-        couponMapper.toCouponReceiptEntity(foundPromotionCoupon, consumerId));
+    redissonLockCouponFacade.decrease(1L, consumerId);
   }
 }

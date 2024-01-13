@@ -30,4 +30,13 @@ public class CouponClientController {
         .data(couponService.getSubscriptionBenefit(consumerId))
         .build();
   }
+
+  @GetMapping("/consumers/{consumerId}/promotion-coupon/prev-check")
+  FeignFormat<Boolean> prevCheck(@PathVariable Long consumerId) {
+
+    return FeignFormat.<Boolean>builder()
+            .code(HttpStatus.OK.value())
+            .data(couponService.prevCheck(consumerId))
+            .build();
+  }
 }
