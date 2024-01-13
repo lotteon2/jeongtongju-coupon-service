@@ -24,8 +24,8 @@ public class CouponRestController {
   @PostMapping("/consumers/coupons")
   public ResponseEntity<ResponseFormat<Void>> receivePromotionCoupon(@RequestHeader Long memberId) {
 
-    couponService.preCheck(memberId);
-    redissonLockCouponFacade.decrease(1L);
+    couponService.prevCheck(memberId);
+    redissonLockCouponFacade.decrease(1L, memberId);
     couponService.AfterProcessing(memberId);
 
     return ResponseEntity.ok()
@@ -68,33 +68,6 @@ public class CouponRestController {
                 .message(HttpStatus.OK.name())
                 .detail("사용 가능한 내 쿠폰 조회 성공")
                 .data(couponService.getAvailableCouponsWhenOrdering(memberId, checkValidRequestDto))
-                .build());
-  }
-
-  @PatchMapping("/coupons/test")
-  public ResponseEntity<ResponseFormat<Void>> getCouponTest() {
-
-    redissonLockCouponFacade.decrease(1L);
-    return ResponseEntity.ok()
-        .body(
-            ResponseFormat.<Void>builder()
-                .code(HttpStatus.OK.value())
-                .message(HttpStatus.OK.name())
-                .detail("[테스트] 쿠폰 수령 성공")
-                .build());
-  }
-
-  @PatchMapping("/coupons/{memberId}")
-  public ResponseEntity<ResponseFormat<Void>> getCouponTest2(@PathVariable Long memberId) {
-
-    redissonLockCouponFacade.decrease(1L);
-    //    couponService.AfterProcessing("v5F5-4125-WXHz", memberId);
-    return ResponseEntity.ok()
-        .body(
-            ResponseFormat.<Void>builder()
-                .code(HttpStatus.OK.value())
-                .message(HttpStatus.OK.name())
-                .detail("[테스트] 쿠폰 수령 성공")
                 .build());
   }
 }

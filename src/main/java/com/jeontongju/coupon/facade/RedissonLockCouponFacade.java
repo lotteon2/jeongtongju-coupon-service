@@ -17,7 +17,7 @@ public class RedissonLockCouponFacade {
   private final RedissonClient redissonClient;
   private final CouponService couponService;
 
-  public void decrease(Long quantity) {
+  public void decrease(Long quantity, Long consumerId) {
 
     Coupon promotionCoupon = couponService.getPromotionCoupon();
     String id = promotionCoupon.getCouponCode();
@@ -30,11 +30,11 @@ public class RedissonLockCouponFacade {
         return;
       }
 
-      couponService.decreasePromotionCoupon(id, quantity);
+      couponService.decreasePromotionCoupon(id, quantity, consumerId);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } finally {
-      log.info("finally executes..");
+      log.info("[finally executes]");
       if (lock.isLocked() && lock.isHeldByCurrentThread()) {
         lock.unlock();
       }
