@@ -30,7 +30,8 @@ public class CouponMapper {
         .build();
   }
 
-  public Coupon toRegularPaymentsCouponEntity(String couponCode, Long discountAmount, Long minOrderPrice, LocalDateTime issuedAt) {
+  public Coupon toRegularPaymentsCouponEntity(
+      String couponCode, Long discountAmount, Long minOrderPrice, LocalDateTime issuedAt) {
 
     LocalDateTime expiredAt = issuedAt.plusYears(1);
 
@@ -85,5 +86,18 @@ public class CouponMapper {
       long couponUse) {
 
     return SubscriptionCouponBenefitForInquiryResponseDto.builder().couponUse(couponUse).build();
+  }
+
+  public Coupon toPromotionCouponEntity(String couponCode) {
+
+    return Coupon.builder()
+        .couponCode(couponCode)
+        .couponName(CouponTypeEnum.PROMOTION)
+        .discountAmount(5000L)
+        .issueLimit(100L)
+        .issuedAt(LocalDateTime.now().plusDays(1L).toLocalDate().atTime(17, 0))
+        .expiredAt(LocalDateTime.now().plusDays(2L).toLocalDate().atStartOfDay())
+        .minOrderPrice(10000L)
+        .build();
   }
 }

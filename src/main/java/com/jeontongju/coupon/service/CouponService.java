@@ -351,18 +351,15 @@ public class CouponService {
                 generatedCouponCode, 5000L, 20000L, regularPaymentsCouponDto.getSuccessedAt()));
 
     couponReceiptRepository.save(
-            couponMapper.toCouponReceiptEntity(
-                    issued5000Coupon, regularPaymentsCouponDto.getConsumerId()));
+        couponMapper.toCouponReceiptEntity(
+            issued5000Coupon, regularPaymentsCouponDto.getConsumerId()));
   }
 
   /** 프로모션 쿠폰 발급 (100개) */
   @Transactional
   public void issuePromotionCoupons() {
 
-    Coupon foundPromotionCoupon = getPromotionCoupon();
-
-    foundPromotionCoupon.assignCouponCode(generateCouponCode());
-    foundPromotionCoupon.assignIssuedLimit(100L);
+    couponRepository.save(couponMapper.toPromotionCouponEntity(generateCouponCode()));
   }
 
   /**
@@ -429,9 +426,10 @@ public class CouponService {
    */
   public Coupon getPromotionCoupon() {
 
+    Pageable pageable = paginationManager.getPageableByCreatedAt(0, 1);
     return couponRepository
-        .findByCouponName(CouponTypeEnum.PROMOTION)
-        .orElseThrow(() -> new CouponNotFoundException(CustomErrMessage.NOT_FOUND_COUPON));
+        .findByCouponNameOrderByIssuedAtDesc(CouponTypeEnum.PROMOTION, pageable)
+        .get(0);
   }
 
   /**
