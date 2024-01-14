@@ -2,6 +2,7 @@ package com.jeontongju.coupon.service;
 
 import com.jeontongju.coupon.domain.Coupon;
 import com.jeontongju.coupon.domain.CouponReceipt;
+import com.jeontongju.coupon.domain.CouponReceiptId;
 import com.jeontongju.coupon.dto.request.OrderPriceForCheckValidRequestDto;
 import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsResponseDto;
 import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
@@ -203,7 +204,8 @@ public class CouponService {
 
     // 이미 수령한 회원, 중복 수령 방지
     if (foundCouponReceipt.isPresent()) {
-//      throw new AlreadyReceivePromotionCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
+
+      // AlreadyReceivePromotionCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
       return false;
     }
 
@@ -213,19 +215,23 @@ public class CouponService {
   /**
    * 쿠폰 수량 차감
    *
-   * @param couponCode Promotion 쿠폰 코드(식별자)
+   * @param coupon Promotion 쿠폰
    * @param quantity 차감할 쿠폰 수량
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void decreasePromotionCoupon(String couponCode, Long quantity, Long consumerId) {
+  public void decreasePromotionCoupon(Coupon coupon, Long quantity, Long consumerId) {
 
-    Coupon foundCoupon = couponRepository.findByCouponCode(couponCode).orElseThrow();
-
-    foundCoupon.decrease(quantity);
-    couponRepository.saveAndFlush(foundCoupon);
-
-    couponReceiptRepository.saveAndFlush(
-        couponMapper.toCouponReceiptEntity(foundCoupon, consumerId));
+    try {
+      coupon.decrease(quantity);
+      couponRepository.save(coupon);
+      CouponReceiptId build =
+          CouponReceiptId.builder().coupon(coupon).consumerId(consumerId).build();
+      couponReceiptRepository.save(CouponReceipt.builder().id(build).isUse(false).build());
+    } catch (Exception e) {
+      log.error(
+          "[During receiving promotion_coupon]: Error at decreasing coupon_limits={}",
+          e.getMessage());
+    }
   }
 
   /**
