@@ -16,21 +16,21 @@ public class RedissonLockCouponFacade {
 
   private final RedissonClient redissonClient;
   private final CouponService couponService;
-
   public void decrease(Long quantity, Long consumerId) {
 
     Coupon promotionCoupon = couponService.getPromotionCoupon();
     String id = promotionCoupon.getCouponCode();
     RLock lock = redissonClient.getLock(id);
     try {
-      boolean available = lock.tryLock(15, 10, TimeUnit.SECONDS);
+      boolean available = lock.tryLock(15, 1, TimeUnit.SECONDS);
 
       if (!available) {
         log.info("lock 획득 실패");
         return;
       }
 
-      couponService.decreasePromotionCoupon(id, quantity, consumerId);
+      Coupon foundCoupon = couponService.getCoupon(id);
+      couponService.decreasePromotionCoupon(foundCoupon, quantity, consumerId);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } finally {
