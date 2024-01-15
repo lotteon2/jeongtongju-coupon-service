@@ -6,6 +6,7 @@ import com.jeontongju.coupon.domain.CouponReceiptId;
 import com.jeontongju.coupon.dto.request.OrderPriceForCheckValidRequestDto;
 import com.jeontongju.coupon.dto.response.AvailableCouponInfoForSummaryNDetailsResponseDto;
 import com.jeontongju.coupon.dto.response.CouponInfoForSingleInquiryResponseDto;
+import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import com.jeontongju.coupon.exception.*;
 import com.jeontongju.coupon.mapper.CouponMapper;
 import com.jeontongju.coupon.repository.CouponReceiptRepository;
@@ -176,7 +177,7 @@ public class CouponService {
    *
    * @param consumerId 로그인 한 회원 식별자
    */
-  public Boolean prevCheck(Long consumerId)
+  public CurCouponStatusForReceiveResponseDto prevCheck(Long consumerId)
       throws NotOpenPromotionCouponEventException, AlreadyReceivePromotionCouponException {
 
     //    test를 위해 잠시 주석처리
@@ -204,12 +205,10 @@ public class CouponService {
 
     // 이미 수령한 회원, 중복 수령 방지
     if (foundCouponReceipt.isPresent()) {
-
-      // AlreadyReceivePromotionCouponException(CustomErrMessage.ALREADY_RECEIVE_COUPON);
-      return false;
+      return couponMapper.toCurCouponStatusDto(false, true, true);
     }
 
-    return true;
+    return couponMapper.toCurCouponStatusDto(false, true, false);
   }
 
   /**

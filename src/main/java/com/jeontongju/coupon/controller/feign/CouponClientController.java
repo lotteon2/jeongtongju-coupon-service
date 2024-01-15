@@ -1,5 +1,6 @@
 package com.jeontongju.coupon.controller.feign;
 
+import com.jeontongju.coupon.dto.response.CurCouponStatusForReceiveResponseDto;
 import com.jeontongju.coupon.service.CouponService;
 import io.github.bitbox.bitbox.dto.FeignFormat;
 import io.github.bitbox.bitbox.dto.SubscriptionCouponBenefitForInquiryResponseDto;
@@ -32,11 +33,11 @@ public class CouponClientController {
   }
 
   @GetMapping("/consumers/{consumerId}/promotion-coupon/prev-check")
-  FeignFormat<Boolean> prevCheck(@PathVariable Long consumerId) {
+  FeignFormat<CurCouponStatusForReceiveResponseDto> prevCheck(@PathVariable Long consumerId) {
 
-    return FeignFormat.<Boolean>builder()
-            .code(HttpStatus.OK.value())
-            .data(couponService.prevCheck(consumerId))
-            .build();
+    return FeignFormat.<CurCouponStatusForReceiveResponseDto>builder()
+        .code(HttpStatus.OK.value())
+        .data(couponService.prevCheck(consumerId))
+        .build();
   }
 }
