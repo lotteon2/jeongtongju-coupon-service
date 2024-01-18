@@ -221,6 +221,9 @@ public class CouponService {
   public void decreasePromotionCoupon(Coupon coupon, Long quantity, Long consumerId) {
 
     try {
+      log.info("[coupon]: " + coupon);
+      String couponCode = coupon.getCouponCode();
+      log.info("[couponCode]: " + couponCode);
       coupon.decrease(quantity);
       couponRepository.save(coupon);
       CouponReceiptId build =
